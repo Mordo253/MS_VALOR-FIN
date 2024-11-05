@@ -1,0 +1,45 @@
+.c-wrapperC {
+    position: relative;
+    top: -2rem;
+    background:white;
+    color: white;
+    overflow: hidden;
+  }
+  
+  .c-containerC {
+    width: 100%;
+    padding: 20px 0;
+  }
+  
+  .c-sliderC {
+    display: flex;
+    animation: slide 30s linear infinite;
+  }
+  
+  .c-sliderC img {
+    width: 150px;
+    height: auto;
+    margin: 0 20px;
+    object-fit: contain;
+  }
+  
+  @keyframes slide {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  
+  
+  .c-containerC:hover .c-sliderC {
+    animation-play-state: paused;
+  }
+  
+
+  @media (max-width: 768px) {
+    .c-sliderC img {
+      width: 100px; 
+    }
+  }

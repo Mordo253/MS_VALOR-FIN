@@ -1,0 +1,58 @@
+#principal-html {
+    background-color: #000;
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    overflow: hidden;
+  }
+  .header-dark {
+    background-color: #000;
+  }
+  .container-fluid {
+    width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+  .p-0 {
+    padding: 0 !important;
+  }
+  .quote-banner, .quote-banner-container, .wrap-trade, .trade, .banner-trade, .header-trade {
+    width: 100%;
+  }
+  .ticker-wrapper {
+    overflow: hidden;
+    width: 100%;
+  }
+  .ticker {
+    display: inline-block;
+    white-space: nowrap;
+    padding-right: 100%;
+    animation: ticker var(--animation-duration) linear infinite;
+  }
+  @keyframes ticker {
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+    100% {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+  .ticker-item {
+    display: inline-block;
+    padding: 0 20px;
+  }
+  .name {
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  .value, .change, .percent {
+    margin-right: 5px;
+  }
+  .positive {
+    color: #00ab8e;
+  }
+  .negative {
+    color: #e95353;
+  }

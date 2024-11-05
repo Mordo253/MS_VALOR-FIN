@@ -1,0 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200;600&display=swap');
+
+:root {
+  --transition-time: 2.3s;
+}
+
+body {
+  font-family: 'Oswald', sans-serif;
+  background-color: #f5f5f5;
+}
+
+.property-grid {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
+.property-section {
+  margin-bottom: 40px;
+}
+
+.section-banner {
+  background-color: #f0f0f0;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.section-banner h2 {
+  margin: 0;
+  color: #333;
+  font-size: 2.5rem;
+}
+
+.card1 {
+  position: relative;
+  height: 400px;
+  width: 90%;
+  margin: 10px auto;
+  transition: ease all var(--transition-time);
+  perspective: 1200px;
+}
+
+.card1:hover .cover {
+  transform: rotateX(0deg) rotateY(-180deg);
+}
+
+.card1:hover .cover:before {
+  transform: translateZ(30px);
+}
+
+.card1:hover .cover:after {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.card1:hover .cover h1,
+.card1:hover .cover .price {
+  transform: translateZ(100px);
+}
+
+.card1:hover .cover .card1-back a {
+  transform: translateZ(-60px) rotateY(-180deg);
+}
+
+.cover {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: ease all var(--transition-time);
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.cover:before {
+  content: '';
+  position: absolute;
+  border: 5px solid rgba(255,255,255,.5);
+  box-shadow: 0 0 12px rgba(0,0,0,.3); 
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2;
+  transition: ease all var(--transition-time);
+  transform-style: preserve-3d;
+  transform: translateZ(0px);
+}
+
+.cover:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  transition: ease all 1.3s;
+  background: rgba(0,0,0,.4);
+}
+
+.cover h1 {
+  font-weight: 600;
+  position: absolute;
+  bottom: 55px;
+  left: 50px;
+  color: white;
+  transform-style: preserve-3d;
+  transition: ease all var(--transition-time);
+  z-index: 3;
+  font-size: 2em;
+  transform: translateZ(0px);
+}
+
+.cover .price {
+  font-weight: 200;
+  position: absolute;
+  top: 55px;
+  right: 50px;
+  color: white;
+  transform-style: preserve-3d;
+  transition: ease all var(--transition-time);
+  z-index: 4;
+  font-size: 1.5em;
+  transform: translateZ(0px);
+}
+
+.card1-back {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  background: #0b0f08;
+  transform-style: preserve-3d;
+  transition: ease all var(--transition-time);
+  transform: translateZ(-1px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card1-back a {
+  transform-style: preserve-3d;
+  transition: ease transform var(--transition-time), ease background .5s;
+  transform: translateZ(-1px) rotateY(-180deg);
+  background: transparent;
+  border: 1px solid white;
+  font-weight: 200;
+  font-size: 1.3em;
+  color: white;
+  padding: 14px 32px;
+  outline: none;
+  text-decoration: none;
+}
+
+.card1-back a:hover {
+  background-color: white;
+  color: #0b0f08;
+}
+
+/* Estilos para el carrusel */
+.slick-prev, .slick-next {
+  z-index: 1;
+}
+
+.slick-prev {
+  left: 10px;
+}
+
+.slick-next {
+  right: 10px;
+}
+
+.slick-slide {
+  padding: 0 10px;
+}
+
+.slick-list {
+  margin: 0 -10px;
+}
+
+@media (max-width: 992px) {
+  .card1 {
+    width: 90%;
+  }
+}
+
+@media (max-width: 768px) {
+  .card1 {
+    width: 100%;
+  }
+}

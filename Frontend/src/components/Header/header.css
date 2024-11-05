@@ -1,0 +1,170 @@
+@charset "UTF-8";
+:root {
+  --PrimaryColor:#4D6C89;
+  --SecondaryColor:#B4A160;
+  --gradientColor:#ddb810;
+  --whiteColor:#fff;
+  --blackColor:#000000;
+  --textColor: #B4A160;
+  --textHoverColor: #1e2938;
+  --whiteColorDeam:#fc0303;
+  --greyText:#737373;
+  --inputColor:#187f86;
+  --bodyColor:#282d44;
+  --cardBG:#386940;
+}
+
+.navBarSection {
+  position: absolute;
+  padding-top: 1rem;
+  width: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  background-color: rgba(255, 255, 255, 0); /* Fondo completamente transparente */
+}
+
+.header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  transition: all 0.3s ease-in-out;
+  background: transparent; /* Fondo transparente */
+}
+.header .logo {
+  color: var(--SecondaryColor);
+  font-weight: 600;
+  cursor: pointer;
+  align-items: center;
+  justify-self: center;
+  transition: color 0.3s ease;
+}
+.header .logo:hover {
+  color: var(--textHoverColor);
+}
+.header .logo .titleLog {
+  font-size: 1.5rem;
+  color: var(--SecondaryColor);
+}
+.header .logo .logoImg {
+  width: 6rem;
+  font-weight: 600;
+  transform: translateY(5px);
+}
+.header .navBar .navLists {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+.header .navBar .navLists .navItem .navLink, .header .navBar .navLists .navItem .btn {
+  color: var(--SecondaryColor);
+  padding: 0.6rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  display: inline-block;
+  min-width: 120px;
+  text-align: center;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: transparent; /* Fondo transparente para los botones */
+}
+.header .navBar .navLists .navItem .navLink::after, .header .navBar .navLists .navItem .btn::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--SecondaryColor);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+}
+.header .navBar .navLists .navItem .navLink:hover, .header .navBar .navLists .navItem .btn:hover {
+  color: var(--textHoverColor);
+}
+.header .navBar .navLists .navItem .navLink:hover::after, .header .navBar .navLists .navItem .btn:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+.header .navBar .navLists .navItem .navLink.active, .header .navBar .navLists .navItem .btn.active {
+  color: var(--textHoverColor);
+}
+.header .navBar .navLists .navItem .navLink.active::after, .header .navBar .navLists .navItem .btn.active::after {
+  transform: scaleX(1);
+}
+.header .navBar .navLists .navItem .btn {
+  border: 1px solid var(--SecondaryColor);
+  border-radius: 3px;
+  background: transparent; /* Asegurando transparencia en el botón */
+}
+.header .navBar .navLists .navItem .btn:hover {
+  background-color: rgba(30, 41, 56, 0.1);
+  border-color: var(--textHoverColor);
+}
+@media screen and (max-width: 768px) {
+  .header .navBar {
+    position: absolute;
+    background: transparent; /* Menú móvil transparente */
+    height: -moz-max-content;
+    height: max-content;
+    width: 80%;
+    border-radius: 1rem;
+    top: -500rem;
+    left: 50%;
+    padding: 1rem;
+    transform: translate(-50%);
+    z-index: 2000;
+    transition: 0.5s ease-in-out;
+  }
+  .header .navBar .navLists {
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    margin: auto;
+    padding: 0.5rem 0;
+    background: transparent; /* Lista de navegación transparente */
+  }
+  .header .navBar .navLists .navItem {
+    padding: 0.5rem 0;
+    width: 100%;
+  }
+  .header .navBar .navLists .navItem .navLink, .header .navBar .navLists .navItem .btn {
+    display: block;
+    width: 100%;
+    max-width: 200px;
+    margin: 0.2rem auto;
+    background: transparent;
+  }
+  .header .navBar .closeNavbar {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    color: var(--PrimaryColor);
+  }
+  .header .navBar .closeNavbar:hover {
+    color: var(--SecondaryColor);
+  }
+  .header .activeNavbar {
+    top: 7rem;
+  }
+}
+
+@media screen and (min-width: 769px) {
+  .toggleNavbar, .closeNavbar {
+    display: none;
+  }
+  .header {
+    padding: 1.5rem 2rem;
+  }
+}
+@media screen and (min-width: 1240px) {
+  .header {
+    padding: 1rem 8.5rem;
+  }
+}/*# sourceMappingURL=header.css.map */

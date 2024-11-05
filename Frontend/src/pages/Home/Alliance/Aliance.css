@@ -1,0 +1,48 @@
+
+  .c-wrapper {
+    position: relative;
+    /* top: 1rem; */
+    background: white;
+    color: white;
+    overflow: hidden;
+  }
+  
+  .c-container {
+    width: 100%;
+    padding: 20px 0; 
+    overflow: hidden;
+  }
+  
+  .c-slider {
+    display: flex;
+    width: max-content; /*Cambiado a max-content para permitir flexibilidad */
+    animation: scroll 60s linear infinite;
+  }
+  
+  .c-slider img {
+    width: 150px;
+    height: auto;
+    margin: 0 20px;
+    object-fit: contain;
+  }
+  
+  @keyframes slide {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  
+  
+  .c-container:hover .c-slider {
+    animation-play-state: paused;
+  }
+  
+
+  @media (max-width: 768px) {
+    .c-slider img {
+      width: 100px; 
+    }
+  }

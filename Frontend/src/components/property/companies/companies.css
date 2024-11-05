@@ -1,0 +1,44 @@
+.c-wrapperP {
+  position: relative;
+  background: white;
+  color: white;
+  overflow: hidden;
+}
+
+.c-containerP {
+  width: 100%;
+  padding: 20px 0;
+}
+
+.c-sliderP {
+  display: flex;
+  animation: slide 30s linear infinite;
+}
+
+.c-sliderP img {
+  width: 150px;
+  height: auto;
+  margin: 0 20px;
+  object-fit: contain;
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+
+.c-containerP:hover .c-sliderP {
+  animation-play-state: paused;
+}
+
+
+@media (max-width: 768px) {
+  .c-sliderP img {
+    width: 100px; 
+  }
+}
