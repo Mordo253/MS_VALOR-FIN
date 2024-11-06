@@ -13,41 +13,34 @@ import { FRONTEND_URL } from "./config.js";
 
 const app = express();
 
-// Middlewares
+// Verifica si la variable de entorno FRONTEND_URL se carga correctamente
+console.log('FRONTEND_URL:', FRONTEND_URL);  // Aquí imprimimos el valor de FRONTEND_URL
+
+// CORS: Permitir solicitudes desde el frontend
 app.use(cors({
-    credentials: true,
-    origin: FRONTEND_URL,
+    origin: FRONTEND_URL, // El frontend debe ser especificado aquí
+    credentials: true, // Permitir cookies/credenciales
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     exposedHeaders: ['Content-Range', 'X-Content-Range'],
-    maxAge: 600 // Tiempo de caché de preflight en segundos
+    maxAge: 600 // Preflight cache duration
 }));
 
+// Configuración de seguridad con Helmet
 app.use(helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
-    xssFilter: true,
-    noSniff: true,
-    hidePoweredBy: true,
-    frameguard: {
-        action: 'deny'
-    }
+    contentSecurityPolicy: false, // Deshabilitado si usas políticas CSP personalizadas
+    crossOriginEmbedderPolicy: false, // Deshabilitado si no se usa COEP
+    xssFilter: true, // Protege contra XSS
+    noSniff: true, // Deshabilita la detección de contenido
+    hidePoweredBy: true, // Esconde información de tecnología utilizada
+    frameguard: { action: 'deny' } // Impide que la página se cargue en un iframe
 }));
 
-// Middleware de parseo
+// Middleware de parseo y manejo de cookies
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(morgan("dev"));
 app.use(cookieParser());
-
-// Headers de seguridad adicionales
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('X-Content-Type-Options', 'nosniff');
-    res.header('X-Frame-Options', 'DENY');
-    res.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-    next();
-});
 
 // Rutas API
 app.use("/api/auth", authRoutes);
