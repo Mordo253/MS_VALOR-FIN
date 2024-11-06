@@ -18,7 +18,7 @@ import aliado15 from '../../../assets/GMAC.png';
 import aliado16 from '../../../assets/OcciAuto.png';
 import aliado17 from '../../../assets/PICHIN.png';
 import aliado18 from '../../../assets/RCI.png';
-import aliado19 from '../../../assets/SUFI.png';
+import aliado19 from '../../../assets/Sufi.png';
 import aliado20 from '../../../assets/vehiG.png';
 import aliado21 from '../../../assets/apoyosf.png';
 
