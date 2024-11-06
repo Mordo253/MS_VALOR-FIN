@@ -3,9 +3,6 @@ import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
 import authRoutes from "./routes/auth.routes.js";
 import propertyRoutes from "./routes/property.routes.js";
@@ -16,16 +13,10 @@ import { FRONTEND_URL } from "./config.js";
 
 const app = express();
 
-// Configuración para ES modules __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 // Middlewares
 app.use(cors({
     credentials: true,
-    origin: [
-        FRONTEND_URL
-    ],
+    origin: FRONTEND_URL,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     exposedHeaders: ['Content-Range', 'X-Content-Range'],
@@ -63,17 +54,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/property", propertyRoutes);
 app.use("/api/car", carRoutes);
 app.use("/api", scraperRoutes);
-
-// Configuración para producción
-if (process.env.NODE_ENV === 'production') {
-    // Servir archivos estáticos de React
-    app.use(express.static(path.join(__dirname, '../dist')));
-    
-    // Todas las rutas no-api servirán el archivo index.html
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../dist/index.html'));
-    });
-}
 
 // Manejo de errores 404
 app.use((req, res, next) => {
