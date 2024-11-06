@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import './home.css'   
 import video from "../../../assets/video1.mp4";
-import img from "../../../assets/BANNERIMG.jpeg";
+import img from "../../../assets/BannerFN.png";
 import { FiFacebook } from "react-icons/fi";
 import { FaInstagram } from "react-icons/fa";
 import { FaWhatsapp } from "react-icons/fa";
