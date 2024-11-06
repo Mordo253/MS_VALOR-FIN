@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react';
+import { FRONTEND_URL } from '../../config';
 
-const API_BASE_URL = 'http://localhost:3000';
+
 const MAX_UPDATES = 5;
 const RESET_HOURS = 24;
 const STORAGE_KEY = 'financial_updates';
@@ -77,7 +78,7 @@ export const Indicador = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fetch(`${API_BASE_URL}/api/financial-data`);
+      const response = await fetch(`${FRONTEND_URL}/api/financial-data`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -101,7 +102,7 @@ export const Indicador = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fetch(`${API_BASE_URL}/api/update-data`, { 
+      const response = await fetch(`${FRONTEND_URL}/api/update-data`, { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
