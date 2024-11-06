@@ -12,6 +12,7 @@ import propertyRoutes from "./routes/property.routes.js";
 import scraperRoutes from "./routes/scraper.routes.js";
 import carRoutes from "./routes/car.routes.js";
 import { updateFinancialData, getFinancialData } from './controllers/scraper.controller.js';
+import { FRONTEND_URL } from "./config.js";
 
 const app = express();
 
@@ -23,8 +24,7 @@ const __dirname = dirname(__filename);
 app.use(cors({
     credentials: true,
     origin: [
-        'https://msdevalor.com', // Dominio de producción
-        'http://localhost:5173'  // URL local
+        FRONTEND_URL
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
