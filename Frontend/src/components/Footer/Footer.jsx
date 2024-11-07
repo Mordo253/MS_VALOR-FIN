@@ -58,7 +58,7 @@ export const Footer = () => {
         
         {/* Columna derecha: Logo */}
         <div className="pub flex items-center justify-center md:justify-end md:flex-none">
-          <Link to="/" className="flex items-center">
+          <Link to="/login" className="flex items-center">
             <img src={imglog} alt="Logo MS DE VALOR" className="w-52 h-52 object-contain" />
           </Link>
         </div>
