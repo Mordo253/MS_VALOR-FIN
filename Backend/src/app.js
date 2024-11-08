@@ -3,6 +3,8 @@ import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import authRoutes from "./routes/auth.routes.js";
 import propertyRoutes from "./routes/property.routes.js";
@@ -12,7 +14,11 @@ import { FRONTEND_URL } from "./config.js";
 
 const app = express();
 
-// Configuración de CORS para permitir solicitudes desde el frontend
+// Configuración de la ruta para ES6
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configuración de CORS
 app.use(cors({
     origin: FRONTEND_URL,
     credentials: true,
@@ -46,9 +52,12 @@ app.use("/api/property", propertyRoutes);
 app.use("/api/car", carRoutes);
 app.use("/api", scraperRoutes);
 
-// Manejo de errores 404
-app.use((req, res, next) => {
-    res.status(404).json({ message: "Recurso no encontrado" });
+// Sirve los archivos estáticos de la carpeta "build"
+app.use(express.static(path.join(__dirname, 'build')));
+
+// Redirige todas las rutas desconocidas a "index.html" para que React maneje el enrutado
+app.get('/*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 // Manejador de errores global
