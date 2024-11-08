@@ -44,7 +44,7 @@ const AppContent = () => {
       <Indicador/>
       <Header />
       <Routes>
-        {/* Rutas pÃºblicas */}
+        {/* Rutas públicas */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/properties" element={<PropertyPage />} />
@@ -67,17 +67,17 @@ const AppContent = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <PropertyProvider>
-        <VehicleProvider>
-          <BrowserRouter>
-            <main>
-              <AppContent />
-            </main>
-          </BrowserRouter>
-        </VehicleProvider>
-      </PropertyProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <PropertyProvider>
+          <VehicleProvider>
+              <main>
+                <AppContent />
+              </main>
+          </VehicleProvider>
+        </PropertyProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

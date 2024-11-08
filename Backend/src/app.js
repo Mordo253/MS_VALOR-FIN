@@ -3,12 +3,19 @@ import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import path from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 import authRoutes from "./routes/auth.routes.js";
 import propertyRoutes from "./routes/property.routes.js";
 import scraperRoutes from "./routes/scraper.routes.js";
 import carRoutes from "./routes/car.routes.js";
 import { FRONTEND_URL } from "./config.js";
+
+// Configuración de __dirname para ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 
@@ -46,9 +53,24 @@ app.use("/api/property", propertyRoutes);
 app.use("/api/car", carRoutes);
 app.use("/api", scraperRoutes);
 
-// Manejo de errores 404
-app.use((req, res, next) => {
-    res.status(404).json({ message: "Recurso no encontrado" });
+// Servir archivos estáticos y manejar rutas del frontend en producción
+if (process.env.NODE_ENV === 'production') {
+    // Servir archivos estáticos desde el directorio dist de React
+    app.use(express.static(path.join(__dirname, '../client/dist')));
+
+    // Manejar todas las rutas que no sean API
+    app.get('/*', (req, res) => {
+        if (!req.path.startsWith('/api')) {
+            res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+        } else {
+            next();
+        }
+    });
+}
+
+// Manejo de errores 404 para rutas de API
+app.use('/api/*', (req, res) => {
+    res.status(404).json({ message: "API recurso no encontrado" });
 });
 
 // Manejador de errores global
