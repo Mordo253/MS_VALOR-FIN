@@ -3,7 +3,8 @@ import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import path from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 import authRoutes from "./routes/auth.routes.js";
 import propertyRoutes from "./routes/property.routes.js";
@@ -12,6 +13,10 @@ import carRoutes from "./routes/car.routes.js";
 import { FRONTEND_URL } from "./config.js";
 
 const app = express();
+
+// Obtener la ruta de __dirname en módulos ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Configuración de CORS
 app.use(cors({
@@ -44,13 +49,13 @@ app.use("/api/property", propertyRoutes);
 app.use("/api/car", carRoutes);
 app.use("/api", scraperRoutes);
 
-// En producción, servir el frontend
+// En producción, servir el frontend desde la carpeta dist
 if (process.env.NODE_ENV === "production") {
-    app.use(express.static(path.join(__dirname, 'Frontend/build')));
+    app.use(express.static(path.join(__dirname, 'Frontend/dist')));
 
-    // Para cualquier otra ruta, devolver el index.html del frontend
+    // Enviar el index.html para cualquier otra solicitud
     app.get('*', (req, res) => {
-        res.sendFile(path.resolve(__dirname, 'Frontend', 'build', 'index.html'));
+        res.sendFile(path.resolve(__dirname, 'Frontend', 'dist', 'index.html'));
     });
 }
 
