@@ -175,7 +175,7 @@ export const Indicador = () => {
               Actualizado: {lastUpdated.toLocaleTimeString()}
             </span>
           )}
-          <div className="flex flex-col items-end">
+          {/* <div className="flex flex-col items-end">
             <button 
               onClick={updateData} 
               className={`bg-blue-500 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded flex items-center ${updateCount >= MAX_UPDATES ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -189,7 +189,7 @@ export const Indicador = () => {
                 Reinicio en: {formatTimeRemaining()}
               </span>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
       {error && <div className="text-xs text-red-400 mt-1">{error}</div>}

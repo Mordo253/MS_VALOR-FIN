@@ -150,13 +150,13 @@
             </div>
   
             {/* Botón de búsqueda - ancho fijo */}
-            <button
+            {/* <button
               onClick={() => applyFilters(localFilters)}
               className="w-[120px] h-[3.3rem] bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2"
             >
               <Search className="w-5 h-5" />
               Buscar
-            </button>
+            </button> */}
           </div>
   
           {/* Segunda fila de filtros */}
