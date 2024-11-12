@@ -137,22 +137,15 @@ export const Indicador = () => {
     const dataInterval = setInterval(fetchFinancialData, 5 * 60 * 1000);
 
     // Verificar el tiempo restante cada minuto
-    const autoUpdateInterval = setInterval(() => {
-      if (shouldAutoUpdate()) {
-        updateData(true);
-      }
-    }, 60 * 60 * 1000);
-
-    // Verificar el tiempo restante cada minuto
     const checkResetInterval = setInterval(() => {
       const now = new Date().getTime();
       if (nextResetTime && now >= nextResetTime) {
-        loadSavedState();
+        loadSavedState(); // Esto reiniciará el contador si han pasado 24 horas
       }
     }, 60 * 1000);
 
     return () => {
-      clearInterval(autoUpdateInterval);
+      clearInterval(dataInterval);
       clearInterval(checkResetInterval);
     };
   }, []);
