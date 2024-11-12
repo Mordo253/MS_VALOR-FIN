@@ -69,8 +69,8 @@ export const HeroH = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
             {/* Columna izquierda - Contenido */}
             <div className="flex flex-col justify-center space-y-8 px-6 lg:px-12">
-              <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
+              <div className="space-y-3 mt-4">
+                <h1 className="text-2xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
                   En MS De Valor te{' '}
                   <br />
                   ayudamos a{' '}

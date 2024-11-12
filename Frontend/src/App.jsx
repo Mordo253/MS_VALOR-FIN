@@ -41,7 +41,7 @@ const AppContent = () => {
   return (
     <>
       <ScrollToTop />
-      <Indicador/>
+      {/* <Indicador/> */}
       <Header />
       <Routes>
         {/* Rutas públicas */}
