@@ -1,5 +1,9 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/msdevalo/public_html/
-    - /bin/rsync -av dist/ $DEPLOYPATH
+    - export DEPLOYPATH=/home/tuusuario/public_html/frontend
+    # Instalar dependencias y construir
+    - /bin/npm install
+    - /bin/npm run build
+    # Copiar archivos de build al directorio de producción
+    - /bin/cp -R build/* $DEPLOYPATH
