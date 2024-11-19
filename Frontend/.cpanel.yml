@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/msdevalo/public_html/
+    - /bin/rsync -av dist/ $DEPLOYPATH
