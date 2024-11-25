@@ -267,7 +267,7 @@ export const PropertyDetails = () => {
                 </Button>
                 
                 <a 
-                  href={`https://wa.me/573160420188?text=Hola MS DE VALOR, estoy interesado en la propiedad ${property.title}`} 
+                  href={`https://wa.me/573160420188?text=Hola MS DE VALOR, estoy interesado en la propiedad ${property.code}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="block"

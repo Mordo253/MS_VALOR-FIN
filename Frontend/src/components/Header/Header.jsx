@@ -11,104 +11,122 @@ const Header = () => {
   const [active, setActive] = useState('navBar');
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation(); // Obtener la ubicación actual
-  
-  // Ocultar el header en las rutas que comiencen con "/admin"
-  if (location.pathname.startsWith('/admin')) {
-    return null;
-  }
 
-  const showNav = () => {
-    setActive('navBar activeNavbar');
-  };
-
-  const removeNavbar = () => {
-    setActive('navBar');
-  };
   // Manejar el scroll
   useEffect(() => {
     const handleScroll = () => {
-        setScrolled(window.scrollY > 50);
+      setScrolled(window.scrollY > 50);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-}, []);
+  }, []);
 
-// Cerrar el menú cuando cambia la ruta
-useEffect(() => {
+  // Cerrar el menú cuando cambia la ruta
+  useEffect(() => {
     setActive(false);
-}, [location]);
+  }, [location]);
 
-// Prevenir scroll cuando el menú está abierto en móvil
-useEffect(() => {
+  // Prevenir scroll cuando el menú está abierto en móvil
+  useEffect(() => {
     if (active && window.innerWidth <= 768) {
-        document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
     } else {
-        document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'unset';
     }
 
     return () => {
-        document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'unset';
     };
-}, [active]);
+  }, [active]);
 
-return (
-  <section className={`navBarSection ${scrolled ? 'scrolled' : ''}`}>
+  // Si estamos en una ruta "/admin", no mostramos el contenido del header
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  
+  return isAdminRoute ? null : (
+    <section className={`navBarSection ${scrolled ? 'scrolled' : ''}`}>
       <header className="header">
-          <div className="logo">
-            <Link to="/" className="logo flex">
-                <img src={imglog} alt="Logo MS DE VALOR" className='logoImg' />
-                <h1 className='titleLog'>MS DE VALOR</h1>
-            </Link>
+        <div className="logo">
+          <Link to="/" className="logo flex">
+            <img src={imglog} alt="Logo MS DE VALOR" className="logoImg" />
+            <h1 className="titleLog">MS DE VALOR</h1>
+          </Link>
+        </div>
 
-          </div>
+        <div className={`navBar ${active ? 'activeNavbar' : ''}`}>
+          <ul className="navLists">
+            <li className="navItem">
+              <Link
+                to="/"
+                className={`navLink ${location.pathname === '/' ? 'active' : ''}`}
+              >
+                INICIO
+              </Link>
+            </li>
+            <li className="navItem">
+              <Link
+                to="/properties"
+                className={`navLink ${
+                  location.pathname === '/properties' ? 'active' : ''
+                }`}
+              >
+                INMUEBLES
+              </Link>
+            </li>
+            <li className="navItem">
+              <Link
+                to="/cars"
+                className={`navLink ${
+                  location.pathname === '/cars' ? 'active' : ''
+                }`}
+              >
+                VEHÍCULOS
+              </Link>
+            </li>
+            <li className="navItem">
+              <Link
+                to="/tools"
+                className={`navLink ${
+                  location.pathname === '/tools' ? 'active' : ''
+                }`}
+              >
+                HERRAMIENTAS
+              </Link>
+            </li>
+            {isAuthenticated ? (
+              <>
+                <li className="navItem">
+                  <Link
+                    className={`navLink ${
+                      location.pathname === '/admin/dashboard' ? 'active' : ''
+                    }`}
+                    to="/admin/dashboard"
+                  >
+                    BIENVENIDO {user?.username}
+                  </Link>
+                </li>
+                <li className="navItem">
+                  <Link className="btn" to="/" onClick={logout}>
+                    Logout
+                  </Link>
+                </li>
+              </>
+            ) : null}
+          </ul>
+        </div>
 
-          <div className={`navBar ${active ? 'activeNavbar' : ''}`}>
-              <ul className="navLists">
-                  <li className="navItem">
-                      <Link to="/" className={`navLink ${location.pathname === '/' ? 'active' : ''}`}>
-                          INICIO
-                      </Link>
-                  </li>
-                  <li className="navItem">
-                      <Link to="/properties" className={`navLink ${location.pathname === '/properties' ? 'active' : ''}`}>
-                          INMUEBLES
-                      </Link>
-                  </li>
-                  <li className="navItem">
-                      <Link to="/cars" className={`navLink ${location.pathname === '/cars' ? 'active' : ''}`}>
-                          VEHÍCULOS
-                      </Link>
-                  </li>
-                  <li className="navItem">
-                      <Link to="/tools" className={`navLink ${location.pathname === '/tools' ? 'active' : ''}`}>
-                          HERRAMIENTAS
-                      </Link>
-                  </li>
-                  {isAuthenticated ? (
-                  <>
-                    <li className="navItem">
-                      <Link className={`navLink ${location.pathname === '/admin/dashboard' ? 'active' : ''}`} to="/admin/dashboard">
-                        BIENVENIDO {user?.username}
-                      </Link>
-                    </li>
-                    <li className="navItem">
-                      <Link className="btn" to="/" onClick={logout}>Logout</Link>
-                    </li>
-                  </>
-                ) : null}
-                  {/* Agrega más elementos de menú aquí */}
-              </ul>
-          </div>
-
-          <div onClick={() => setActive(!active)} className="toggleNavbar">
-              {!active ? (<TbGridDots className='icon'/>) : 
-              (<IoIosCloseCircle className='icon'/>)}
-          </div>
+        <div onClick={() => setActive(!active)} className="toggleNavbar">
+          {!active ? (
+            <TbGridDots className="icon" />
+          ) : (
+            <IoIosCloseCircle className="icon" />
+          )}
+        </div>
       </header>
-  </section>
-);
+    </section>
+  );
 };
+
 export default Header;
 
 
