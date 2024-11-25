@@ -15,7 +15,7 @@ export const NotarialCalculator = () => {
     copias: 70000,
     impuestoBeneficencia: 0,
     impuestoRegistro: 0,
-    certificado: 18000,
+    certificado: 20900,
   });
 
   const formatInputCurrency = (value) => {

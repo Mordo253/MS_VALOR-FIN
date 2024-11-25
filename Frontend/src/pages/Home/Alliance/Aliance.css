@@ -1,48 +1,81 @@
+.c-wrapper {
+  position: relative;
+  background: white;
+  overflow: hidden;
+  padding: 20px 0;
+}
 
-  .c-wrapper {
-    position: relative;
-    /* top: 1rem; */
-    background: white;
-    color: white;
-    overflow: hidden;
+.c-container {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column; /* Asegura que el título esté arriba y el carrusel debajo */
+  align-items: center; /* Centra el contenido horizontalmente */
+}
+
+.c-container h2 {
+  font-size: 1.8rem; /* Ajusta el tamaño del título */
+  text-align: center; /* Centra el texto */
+  color: #000; /* Asegura el color negro */
+  margin-bottom: 20px; /* Agrega espacio entre el título y el carrusel */
+  line-height: 1.4; /* Mejora la legibilidad */
+}
+
+.c-slider {
+  display: flex;
+  width: fit-content;
+  animation: scroll 30s linear infinite; /* Animación más lenta */
+}
+
+.c-slider img {
+  flex-shrink: 0;
+  width: 12vw;
+  max-width: 150px;
+  height: auto;
+  object-fit: contain;
+  margin-right: 20px;
+  transition: transform 0.3s ease;
+}
+
+/* Animación continua */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
   }
-  
-  .c-container {
-    width: 100%;
-    padding: 20px 0; 
-    overflow: hidden;
+  100% {
+    transform: translateX(-50%);
   }
-  
+}
+
+/* Velocidad ajustada en móviles */
+@media (max-width: 1024px) {
   .c-slider {
-    display: flex;
-    width: max-content; /*Cambiado a max-content para permitir flexibilidad */
-    animation: scroll 60s linear infinite;
+    animation-duration: 25s;
   }
-  
   .c-slider img {
-    width: 150px;
-    height: auto;
-    margin: 0 20px;
-    object-fit: contain;
+    width: 15vw;
   }
-  
-  @keyframes slide {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-50%);
-    }
-  }
-  
-  
-  .c-container:hover .c-slider {
-    animation-play-state: paused;
-  }
-  
+}
 
-  @media (max-width: 768px) {
-    .c-slider img {
-      width: 100px; 
-    }
+@media (max-width: 768px) {
+  .c-slider {
+    animation-duration: 20s;
   }
+  .c-slider img {
+    width: 20vw;
+  }
+}
+
+@media (max-width: 480px) {
+  .c-slider {
+    animation-duration: 15s;
+  }
+  .c-slider img {
+    width: 25vw;
+  }
+
+  .c-container h2 {
+    font-size: 1.5rem; /* Tamaño más pequeño para pantallas móviles */
+    margin-bottom: 15px; /* Menor espacio en móviles */
+  }
+}

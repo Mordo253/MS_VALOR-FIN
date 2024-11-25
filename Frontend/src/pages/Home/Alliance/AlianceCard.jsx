@@ -23,13 +23,14 @@ import aliado20 from '../../../assets/vehiG.png';
 import aliado21 from '../../../assets/apoyosf.png';
 
 export const Aliance = () => {
-  const images = [aliado1, aliado2, aliado3, aliado4, aliado5, aliado6, aliado7, aliado8, aliado9, aliado10, aliado11, aliado12, aliado13, aliado14, aliado15, aliado16, aliado17, aliado18, aliado19, aliado20,aliado21];
+  const images = [aliado1, aliado2, aliado3, aliado4, aliado5, aliado6, aliado7, aliado8, aliado9, aliado10, aliado11, aliado12, aliado13, aliado14, aliado15, aliado16, aliado17, aliado18, aliado19, aliado20, aliado21];
 
   return (
     <section className='c-wrapper'>
       <div className="c-container">
         <h2 className='text-2xl text-black font-semibold text-center'>CONOCE A NUESTROS ALIADOS</h2>
         <div className="c-slider">
+          {/* Renderizamos las imágenes dos veces para crear el efecto continuo */}
           {images.concat(images).map((img, index) => (
             <img key={index} src={img} alt={`Aliado ${(index % images.length) + 1}`} />
           ))}

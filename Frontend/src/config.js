@@ -5,5 +5,5 @@ export const API_URL = isDevelopment
   : "https://ms-valor-fin.onrender.com/api";
 
 export const FRONTEND_URL = isDevelopment 
-  ? "http://localhost:5173/" 
+  ? "http://localhost:3000" 
   : "https://ms-valor-fin.onrender.com";

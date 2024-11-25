@@ -9,7 +9,7 @@ import { WorkUs } from './WorkUs/WorkUs';
 const appD = () => {
   return (
     <>
-        <Home/>
+        <Home/> 
         <HeroH/>
         <Service/>
         <ToolsB/>

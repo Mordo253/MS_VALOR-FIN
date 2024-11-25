@@ -1,165 +1,240 @@
+import React, { useEffect, useRef } from 'react';
 import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, EffectFade } from 'swiper/modules';
+import { Link } from "react-router-dom";
+import { TrendingUp } from 'lucide-react';
+
+// Importaciones de estilos
 import 'swiper/css';
 import 'swiper/css/autoplay';
-import { Autoplay } from 'swiper/modules';
-import { Link } from "react-router-dom";
+import 'swiper/css/effect-fade';
+import "./Service.css";
+
+// Importaciones de medios
 import video2 from "../../../assets/videoC.mp4";
 import video1 from "../../../assets/video1.mp4";
 import banner2 from "../../../assets/bannerFH.png";
-import banner1 from "../../../assets/bannerIn.jpg";
-import { Phone, Search, FileText, ShieldAlert, TrendingUp, PiggyBank } from 'lucide-react';
-import "./Service.css";
 
 export const Service = () => {
+  const swiperRef = useRef(null);
+
+  // Lista de servicios
   const services = [
     {
-      icon: <TrendingUp className="w-6 h-6" />,
+      icon: <TrendingUp className="service-icon" />,
       title: "Crédito Hipotecario y Leasing",
     },
     {
-      icon: <TrendingUp className="w-6 h-6" />,
+      icon: <TrendingUp className="service-icon" />,
       title: "Crédito de vehículo",
     },
     {
-      icon: <TrendingUp className="w-6 h-6" />,
+      icon: <TrendingUp className="service-icon" />,
       title: "Crédito por Libranza",
     },
     {
-      icon: <TrendingUp className="w-6 h-6" />,
+      icon: <TrendingUp className="service-icon" />,
       title: "Crédito de consumo",
     },
     {
-      icon: <TrendingUp className="w-6 h-6" />,
+      icon: <TrendingUp className="service-icon" />,
       title: "Seguros de autos, hogar y vida",
     },
     {
-      icon: <TrendingUp className="w-6 h-6" />,
+      icon: <TrendingUp className="service-icon" />,
       title: "Servicios de logística y tramites en general",
     },
   ];
+
+  // Configuración del Swiper
+  const swiperParams = {
+    spaceBetween: 0,
+    slidesPerView: 1,
+    effect: "fade",
+    autoplay: {
+      delay: 10000,
+      disableOnInteraction: false,
+      pauseOnMouseEnter: true
+    },
+    modules: [Autoplay, EffectFade],
+    onSwiper: (swiper) => {
+      swiperRef.current = swiper;
+    }
+  };
+
+  // Manejo de efectos y optimizaciones
+  useEffect(() => {
+    const videos = document.querySelectorAll('video');
+    
+    // Optimización de reproducción de video
+    videos.forEach(video => {
+      video.play().catch(function(error) {
+        console.log("Video autoplay prevented:", error);
+      });
+    });
+
+    // Manejo de visibilidad de página
+    const handleVisibilityChange = () => {
+      videos.forEach(video => {
+        if (document.hidden) {
+          video.pause();
+        } else {
+          video.play().catch(() => {});
+        }
+      });
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Limpieza
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      videos.forEach(video => video.pause());
+    };
+  }, []);
+
   return (
-    <section className="w-full h-screen">
-      <div className="h-full w-full max-w-screen-2xl mx-auto">
-        <Swiper
-          spaceBetween={0}
-          slidesPerView={1}
-          autoplay={{ delay: 10000 }} 
-          modules={[Autoplay]}
-          className="w-full h-full"
-        >
-          {/* Banner 1 */}
-          <SwiperSlide>
-            <div className="relative w-full h-full bg-gradient-to-r from-black to-gray-500 p-4 sm:p-8 rounded-lg shadow-lg overflow-hidden">
+    <section className="hero-section">
+      <Swiper {...swiperParams} className="hero-swiper">
+        {/* Slide 1: Servicios */}
+        <SwiperSlide>
+          <div className="slide-wrapper">
+            <div className="media-container">
               <video
-                  src={video1}
-                  muted
-                  autoPlay
-                  loop
-                  type="video/mp4"
-                  className="absolute top-0 left-0 w-full h-full object-cover z-0"
-                ></video>
-              <div className="absolute top-0 left-0 w-full h-full bg-black opacity-30 z-10"></div>
-              <div className="absolute top-4 left-0 w-full flex justify-center z-20">
-                <h2 className="text-4xl md:text-5xl font-bold text-white text-center px-4 py-2 rounded-md">
+                src={video1}
+                className="background-video"
+                autoPlay
+                loop
+                muted
+                playsInline
+                poster={banner2}
+              />
+              <div className="media-overlay" />
+            </div>
+            
+            <div className="content-container services-slide">
+              <div className="text-container">
+                <h1 className="main-heading">
                   DESCUBRE UNA AMPLIA VARIEDAD DE SERVICIOS
-                </h2>
-              </div>
-              <div className="relative z-20 h-full flex flex-col justify-center items-center space-y-2 sm:space-y-6 px-4">
-                <h2 className="text-2xl sm:text-4xl font-bold text-[#C5A572] text-center">
-                  ASESORIAS EN:
-                </h2>
-                <div className="space-y-4">
-                  {services.map((service, index) => (
-                    <div key={index} className="flex items-center gap-3 justify-start gap-x-4">
-                      <div className="text-amber-200 w-6 h-6">
-                        {service.icon}
+                </h1>
+                
+                <div className="services-content">
+                  <h2 className="services-title">
+                    ASESORIAS EN:
+                  </h2>
+                  
+                  <div className="services-grid">
+                    {services.map((service, index) => (
+                      <div 
+                        key={index} 
+                        className="service-item"
+                        style={{ 
+                          animationDelay: `${index * 0.1}s`,
+                          '--index': index 
+                        }}
+                      >
+                        <div className="icon-wrapper">
+                          {service.icon}
+                        </div>
+                        <span className="service-label">
+                          {service.title}
+                        </span>
                       </div>
-                      <p className="text-gray-300 text-xl">{service.title}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-center">
-                  <a href="https://wa.me/573160420188?text=Hola MS DE VALOR. 👋" target='_blank'>
-                    <button className="bg-gray-900 text-white px-3 py-1 sm:px-6 sm:py-2 rounded-full text-xs sm:text-base">
-                      VER MÁS
-                    </button>
+                    ))}
+                  </div>
+
+                  <a
+                    href="https://wa.me/573160420188?text=Hola MS DE VALOR. 👋"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cta-button"
+                  >
+                    VER MÁS
                   </a>
                 </div>
               </div>
             </div>
-          </SwiperSlide>
+          </div>
+        </SwiperSlide>
 
-          {/* Banner 2 */}
-          <SwiperSlide>
-            <div className="relative w-full h-full bg-gradient-to-r from-black to-gray-500 p-4 sm:p-8 rounded-lg shadow-lg overflow-hidden">
+        {/* Slide 2: Inmuebles */}
+        <SwiperSlide>
+          <div className="slide-wrapper">
+            <div className="media-container">
               <img
                 src={banner2}
-                alt="casa"
-                className="absolute top-0 left-0 w-full h-full object-cover z-0"
-              ></img>
-              <div className="absolute top-0 left-0 w-full h-full bg-black opacity-30 z-10"></div>
-              <div className="absolute top-4 left-0 w-full flex justify-center z-20">
-                <h2 className="text-4xl md:text-5xl font-bold text-white text-center px-4 py-2 rounded-md">
+                alt="Inmuebles disponibles"
+                className="background-image"
+                loading="lazy"
+              />
+              <div className="media-overlay" />
+            </div>
+            
+            <div className="content-container properties-slide">
+              <div className="text-container">
+                <h1 className="main-heading">
                   DESCUBRE UNA AMPLIA VARIEDAD DE INMUEBLES
-                </h2>
-              </div>
-              <div className="relative z-20 h-full flex flex-col justify-center items-center space-y-2 sm:space-y-6 px-4">
-                <h2 className="text-3xl sm:text-4xl font-bold text-[#C5A572] text-center">
-                  ASESORIA INMOBILIARIA
-                </h2>
-                <h2 className="text-3xl sm:text-4xl font-bold text-[#C5A572] text-center">
-                  EN MS DE VALOR
-                </h2>
-                <p className="text-white text-sm sm:text-lg text-center">
-                PONEMOS UNA AMPLIA OFERTA DE PROPIEDADES EN TUS MANOS
-                </p>
-                <div className="flex justify-center">
-                  <Link to="/properties-list">
-                    <button className="bg-gray-900 text-white px-3 py-1 sm:px-6 sm:py-2 rounded-full text-xs sm:text-base">
-                      VER MÁS
-                    </button>
+                </h1>
+                
+                <div className="properties-content">
+                  <h2 className="properties-title">
+                    ASESORIA INMOBILIARIA
+                  </h2>
+                  <h3 className="properties-subtitle">
+                    EN MS DE VALOR
+                  </h3>
+                  <p className="properties-description">
+                    PONEMOS UNA AMPLIA OFERTA DE PROPIEDADES EN TUS MANOS
+                  </p>
+                  <Link to="/properties-list" className="cta-button">
+                    VER MÁS
                   </Link>
                 </div>
               </div>
             </div>
-          </SwiperSlide>
+          </div>
+        </SwiperSlide>
 
-          {/* Banner 3 */}
-          <SwiperSlide>
-            <div className="relative w-full h-full bg-gradient-to-r from-black to-gray-500 p-4 sm:p-8 rounded-lg shadow-lg overflow-hidden">
+        {/* Slide 3: Vehículos */}
+        <SwiperSlide>
+          <div className="slide-wrapper">
+            <div className="media-container">
               <video
                 src={video2}
-                muted
+                className="background-video"
                 autoPlay
                 loop
-                type="video/mp4"
-                className="absolute top-0 left-0 w-full h-full object-cover z-0"
-              ></video>
-              <div className="absolute top-0 left-0 w-full h-full bg-black opacity-30 z-10"></div>
-              <div className="absolute top-4 left-0 w-full flex justify-center z-20">
-                <h2 className="text-4xl md:text-5xl font-bold text-white text-center px-4 py-2 rounded-md">
+                muted
+                playsInline
+                poster={banner2}
+              />
+              <div className="media-overlay" />
+            </div>
+            
+            <div className="content-container vehicles-slide">
+              <div className="text-container">
+                <h1 className="main-heading">
                   DESCUBRE UNA AMPLIA VARIEDAD DE VEHÍCULOS
-                </h2>
-              </div>
-              <div className="relative z-20 h-full flex flex-col justify-center items-center space-y-2 sm:space-y-6 px-4 top-[-2rem]">
-                <h2 className="text-2xl sm:text-4xl font-bold text-[#C5A572] text-center">
-                  Encuentra con MS De Valor
-                </h2>
-                <p className="text-white text-xl sm:text-2xl text-center">
-                  El vehículo de tus Sueños
-                </p>
-                <div className="flex justify-center">
-                  <Link to="/cars-list">
-                    <button className="bg-gray-900 text-white px-3 py-1 sm:px-6 sm:py-2 rounded-full text-xs sm:text-base">
-                      VER MÁS
-                    </button>
+                </h1>
+                
+                <div className="vehicles-content">
+                  <h2 className="vehicles-title">
+                    Encuentra con MS De Valor
+                  </h2>
+                  <p className="vehicles-description">
+                    El vehículo de tus Sueños
+                  </p>
+                  <Link to="/cars-list" className="cta-button">
+                    VER MÁS
                   </Link>
                 </div>
               </div>
             </div>
-          </SwiperSlide>
-        </Swiper>
-      </div>
+          </div>
+        </SwiperSlide>
+      </Swiper>
     </section>
   );
 };
+
+export default Service;

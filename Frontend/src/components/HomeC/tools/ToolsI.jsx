@@ -1,39 +1,89 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Calculator, RefreshCw, X } from 'lucide-react';
 import { NotarialCalculator } from '../../../pages/Tools/Notarialtool';
 
 const formatCurrency = (value) => {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat('es-CO', { 
+    style: 'currency', 
+    currency: 'COP', 
+    minimumFractionDigits: 0 
+  }).format(value);
+};
+
+// Función para formatear números con puntos de separación
+const formatNumber = (value) => {
+  return value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+// Función para desformatear números (quitar puntos)
+const unformatNumber = (value) => {
+  return value.replace(/\./g, "");
 };
 
 const Modal = ({ isOpen, onClose, children, isNotarial }) => {
+  const modalRef = useRef(null);
+  const contentRef = useRef(null);
+
   useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !contentRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      modalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
     } else {
       document.body.style.overflow = 'unset';
     }
 
     return () => {
       document.body.style.overflow = 'unset';
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
-  
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className={`bg-white p-6 rounded-lg shadow-xl ${isNotarial ? 'max-w-2xl' : 'max-w-md'} w-full max-h-[90vh] overflow-y-auto relative`}>
-        <button 
-          onClick={() => {
-            document.body.style.overflow = 'unset';
-            onClose();
-          }} 
-          className="float-right text-gray-600 hover:text-gray-800"
-        >
-          <X size={24} />
-        </button>
-        {children}
+    <div 
+      ref={modalRef} 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] px-4 py-6"
+      style={{ backdropFilter: 'blur(2px)' }}
+    >
+      <div 
+        ref={contentRef}
+        className={`relative bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto z-[10000] transform transition-all duration-300 ease-in-out ${
+          isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        }`}
+      >
+        <div className="sticky top-0 bg-white p-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {children?.type?.name || 'Modal'}
+          </h2>
+          <button 
+            onClick={() => {
+              document.body.style.overflow = 'unset';
+              onClose();
+            }} 
+            className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
+          >
+            <X size={24} />
+          </button>
+        </div>
+        <div className="p-6">
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -41,11 +91,21 @@ const Modal = ({ isOpen, onClose, children, isNotarial }) => {
 
 const CreditSimulator = ({ onClose }) => {
   const [amount, setAmount] = useState('');
-  const [term, setTerm] = useState(48);
+  const [term, setTerm] = useState(120); // Valor inicial cambiado a un punto medio más razonable
   const [rateType, setRateType] = useState('fixed');
   const [customRate, setCustomRate] = useState('');
   const [result, setResult] = useState(null);
 
+  // Formatea el número como moneda colombiana
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-CO', { 
+      style: 'currency', 
+      currency: 'COP', 
+      minimumFractionDigits: 0 
+    }).format(value);
+  };
+
+  // Maneja los cambios en el monto del crédito
   const handleAmountChange = (e) => {
     const value = e.target.value.replace(/\D/g, '');
     if (value === '' || parseInt(value, 10) >= 0) {
@@ -53,13 +113,22 @@ const CreditSimulator = ({ onClose }) => {
     }
   };
 
+  // Maneja los cambios en el plazo
   const handleTermChange = (e) => {
-    const value = parseInt(e.target.value, 10);
-    if (!isNaN(value) && value >= 12) {
-      setTerm(Math.min(value, 84));
+    const value = e.target.value.replace(/\D/g, '');
+    if (value === '' || value === '0') {
+      setTerm('');
+    } else {
+      const numValue = parseInt(value, 10);
+      if (numValue >= 1 && numValue <= 360) {
+        setTerm(numValue);
+      } else if (numValue > 360) {
+        setTerm(360);
+      }
     }
   };
 
+  // Maneja los cambios en la tasa personalizada
   const handleCustomRateChange = (e) => {
     const value = e.target.value;
     if (value === '' || (parseFloat(value) >= 0 && !value.startsWith('-'))) {
@@ -67,20 +136,22 @@ const CreditSimulator = ({ onClose }) => {
     }
   };
 
+  // Calcula el pago mensual
   const calculateMonthlyPayment = (principal, rate, months) => {
     const monthlyRate = rate / 100;
     if (monthlyRate === 0) return principal / months;
     return (principal * monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
   };
 
+  // Maneja la simulación
   const handleSimulate = () => {
     if (!amount || amount < 1000000 || amount > 500000000) {
       alert('Por favor ingrese un monto válido entre $1,000,000 y $500,000,000');
       return;
     }
 
-    if (!term || term < 12 || term > 84) {
-      alert('Por favor ingrese un plazo válido entre 12 y 84 meses');
+    if (!term || term < 1 || term > 360) {
+      alert('Por favor ingrese un plazo válido entre 1 y 360 meses');
       return;
     }
 
@@ -112,11 +183,7 @@ const CreditSimulator = ({ onClose }) => {
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4 flex items-center">
-        <Calculator className="mr-2" /> Simulador de Crédito
-      </h2>
-      
+    <div className="space-y-4 p-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">Monto del crédito</label>
         <input
@@ -125,8 +192,6 @@ const CreditSimulator = ({ onClose }) => {
           onChange={handleAmountChange}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
           placeholder="$0"
-          min="1000000"
-          max="500000000"
         />
         <p className="text-xs text-gray-500 mt-1">Monto Mínimo: $1,000,000 - Monto Máximo: $500,000,000</p>
       </div>
@@ -134,19 +199,13 @@ const CreditSimulator = ({ onClose }) => {
       <div>
         <label className="block text-sm font-medium text-gray-700">Plazo (meses)</label>
         <input
-          type="number"
+          type="text"
           value={term}
           onChange={handleTermChange}
-          onKeyDown={(e) => {
-            if (e.key === '-' || e.key === 'e' || e.key === '.') {
-              e.preventDefault();
-            }
-          }}
-          min="12"
-          max="84"
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          placeholder="Ingrese el plazo en meses"
         />
-        <p className="text-xs text-gray-500 mt-1">Plazo entre 12 y 84 meses</p>
+        <p className="text-xs text-gray-500 mt-1">Plazo entre 1 y 360 meses</p>
       </div>
 
       <div>
@@ -170,11 +229,6 @@ const CreditSimulator = ({ onClose }) => {
             type="number"
             value={customRate}
             onChange={handleCustomRateChange}
-            onKeyDown={(e) => {
-              if (e.key === '-' || e.key === 'e') {
-                e.preventDefault();
-              }
-            }}
             step="0.01"
             min="0"
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
@@ -194,15 +248,16 @@ const CreditSimulator = ({ onClose }) => {
       {result && (
         <div className="mt-4 p-4 bg-gray-100 rounded-md space-y-2">
           <h3 className="font-semibold text-lg mb-2">Resultado de la simulación:</h3>
-          <p>Cuota mensual: {formatCurrency(result.monthlyPayment)}</p>
+          <p>Cuota mensual: {formatCurrency(Math.round(result.monthlyPayment))}</p>
           <p>Tasa mes vencido: {result.interestRate.toFixed(2)}%</p>
-          <p>Total intereses: {formatCurrency(result.totalInterest)}</p>
-          <p>Total a pagar: {formatCurrency(result.totalPayment)}</p>
+          <p>Total intereses: {formatCurrency(Math.round(result.totalInterest))}</p>
+          <p>Total a pagar: {formatCurrency(Math.round(result.totalPayment))}</p>
         </div>
       )}
     </div>
   );
 };
+
 
 const InterestRateConverter = ({ onClose }) => {
   const [inputRate, setInputRate] = useState('');
@@ -258,21 +313,12 @@ const InterestRateConverter = ({ onClose }) => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4 flex items-center">
-        <RefreshCw className="mr-2" /> Convertidor a Tasa M.V.
-      </h2>
-      
       <div>
         <label className="block text-sm font-medium text-gray-700">Tasa de interés</label>
         <input
           type="number"
           value={inputRate}
           onChange={handleRateChange}
-          onKeyDown={(e) => {
-            if (e.key === '-' || e.key === 'e') {
-              e.preventDefault();
-            }
-          }}
           step="0.0001"
           min="0"
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
@@ -334,17 +380,49 @@ export const ToolsI = () => {
     }
   ];
 
+  // Manejar el scroll y focus cuando se abre un modal
+  useEffect(() => {
+    const handleModalOpen = (isOpen) => {
+      if (isOpen) {
+        // Guardar la posición actual del scroll
+        const scrollPosition = window.pageYOffset;
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollPosition}px`;
+        document.body.style.width = '100%';
+      } else {
+        // Restaurar la posición del scroll
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.overflow = '';
+        document.body.style.width = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    };
+
+    // Aplicar el manejo de scroll para cada modal
+    handleModalOpen(isSimulatorOpen || isConverterOpen || isNotarialOpen);
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+    };
+  }, [isSimulatorOpen, isConverterOpen, isNotarialOpen]);
+
   return (
     <div className="container mx-auto px-4">
-      <div className="flex flex-row justify-center items-center gap-6 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         {toolCards.map((card, index) => (
           <div 
             key={index}
-            className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer w-64"
+            className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer transform transition-transform duration-200 hover:scale-105"
             onClick={card.onClick}
           >
             <div className="flex flex-col items-center justify-center p-6 h-40">
-              <div className="bg-indigo-100 rounded-full p-4 mb-4">
+              <div className="bg-indigo-50 rounded-full p-4 mb-4 transform transition-all duration-200 group-hover:scale-110">
                 {card.icon}
               </div>
               <span className="text-sm font-medium text-center">{card.title}</span>
@@ -353,15 +431,25 @@ export const ToolsI = () => {
         ))}
       </div>
 
-      <Modal isOpen={isSimulatorOpen} onClose={() => setIsSimulatorOpen(false)}>
+      <Modal 
+        isOpen={isSimulatorOpen} 
+        onClose={() => setIsSimulatorOpen(false)}
+      >
         <CreditSimulator onClose={() => setIsSimulatorOpen(false)} />
       </Modal>
 
-      <Modal isOpen={isConverterOpen} onClose={() => setIsConverterOpen(false)}>
+      <Modal 
+        isOpen={isConverterOpen} 
+        onClose={() => setIsConverterOpen(false)}
+      >
         <InterestRateConverter onClose={() => setIsConverterOpen(false)} />
       </Modal>
 
-      <Modal isOpen={isNotarialOpen} onClose={() => setIsNotarialOpen(false)} isNotarial={true}>
+      <Modal 
+        isOpen={isNotarialOpen} 
+        onClose={() => setIsNotarialOpen(false)} 
+        isNotarial={true}
+      >
         <NotarialCalculator onClose={() => setIsNotarialOpen(false)} />
       </Modal>
     </div>
