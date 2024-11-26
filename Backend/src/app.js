@@ -17,7 +17,8 @@ const app = express();
 
 // Configuración de CORS actualizada usando la variable de entorno FRONTEND_URL
 const ALLOWED_ORIGINS = [
-    process.env.FRONTEND_URL, // Usar la variable de entorno
+    process.env.FRONTEND_URL,
+    'https://www.msdevalor.com', // Usar la variable de entorno
     'http://localhost:5173',  // Frontend en desarrollo
     'http://localhost:3000'   // Frontend en preview
 ];
