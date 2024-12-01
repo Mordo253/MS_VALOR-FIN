@@ -11,25 +11,25 @@ const waitForSelector = async (page, selector, timeout = 5000) => {
   }
 };
 
-const shouldUpdate = async () => {
-  try {
-    const lastUpdate = await FinancialData.findOne({}, {}, { sort: { 'updatedAt': -1 } });
+// const shouldUpdate = async () => {
+//   try {
+//     const lastUpdate = await FinancialData.findOne({}, {}, { sort: { 'updatedAt': -1 } });
     
-    if (!lastUpdate) {
-      return true;
-    }
+//     if (!lastUpdate) {
+//       return true;
+//     }
 
-    const lastUpdateDate = new Date(lastUpdate.updatedAt);
-    const today = new Date();
+//     const lastUpdateDate = new Date(lastUpdate.updatedAt);
+//     const today = new Date();
 
-    return lastUpdateDate.getDate() !== today.getDate() ||
-           lastUpdateDate.getMonth() !== today.getMonth() ||
-           lastUpdateDate.getFullYear() !== today.getFullYear();
-  } catch (error) {
-    console.error('Error checking last update:', error);
-    return false;
-  }
-};
+//     return lastUpdateDate.getDate() !== today.getDate() ||
+//            lastUpdateDate.getMonth() !== today.getMonth() ||
+//            lastUpdateDate.getFullYear() !== today.getFullYear();
+//   } catch (error) {
+//     console.error('Error checking last update:', error);
+//     return false;
+//   }
+// };
 
 const scrapers = {
   tasaUsura: async (page) => {
@@ -242,27 +242,116 @@ const scrapeAllData = async () => {
   }
 };
 
+// export const updateFinancialData = async (req, res) => {
+//   try {
+//     const shouldUpdateToday = await shouldUpdate();
+//     if (!shouldUpdateToday) {
+//       const allData = await FinancialData.find({});
+//       return res.json({ 
+//         message: 'Data was already updated today. Using existing data.', 
+//         data: allData 
+//       });
+//     }
+
+//     await scrapeAllData();
+//     const allData = await FinancialData.find({});
+//     console.log('All data in MongoDB:', allData);
+//     res.json({ message: 'Data update completed successfully', data: allData });
+//   } catch (error) {
+//     console.error('Error in updateFinancialData:', error);
+//     res.status(500).json({ error: 'Error updating financial data', details: error.message });
+//   }
+// };
+
 export const updateFinancialData = async (req, res) => {
   try {
     const shouldUpdateToday = await shouldUpdate();
+    
     if (!shouldUpdateToday) {
       const allData = await FinancialData.find({});
       return res.json({ 
-        message: 'Data was already updated today. Using existing data.', 
+        message: 'Data was already updated today. Using existing data.',
         data: allData 
       });
     }
 
-    await scrapeAllData();
-    const allData = await FinancialData.find({});
-    console.log('All data in MongoDB:', allData);
-    res.json({ message: 'Data update completed successfully', data: allData });
+    // Obtener datos existentes antes de la actualización
+    const existingData = await FinancialData.find({});
+    const existingPrices = new Map(
+      existingData.map(item => [item.symbol, item.price])
+    );
+
+    // Obtener nuevos datos del scraper
+    const scrapedData = await scrapeAllData();
+
+    // Actualizar cada registro con cálculos de cambios
+    const currentHour = new Date().getHours();
+    const updatePromises = scrapedData.map(async item => {
+      const previousPrice = existingPrices.get(item.symbol) || item.price;
+      const change = item.price - previousPrice;
+      const percentChange = ((item.price - previousPrice) / previousPrice) * 100;
+
+      return FinancialData.findOneAndUpdate(
+        { symbol: item.symbol },
+        {
+          $set: {
+            name: item.name,
+            price: item.price,
+            previousPrice: previousPrice,
+            change: change,
+            percentChange: percentChange,
+            source: item.source || 'scraper',
+            updatedAt: new Date(),
+            updatePeriod: currentHour < 12 ? 'morning' : 'afternoon'
+          }
+        },
+        { 
+          upsert: true, 
+          new: true,
+          setDefaultsOnInsert: true 
+        }
+      );
+    });
+
+    await Promise.all(updatePromises);
+    const updatedData = await FinancialData.find({});
+    
+    console.log('All data in MongoDB:', updatedData);
+    res.json({ 
+      message: 'Data update completed successfully',
+      data: updatedData 
+    });
+
   } catch (error) {
     console.error('Error in updateFinancialData:', error);
-    res.status(500).json({ error: 'Error updating financial data', details: error.message });
+    res.status(500).json({ 
+      error: 'Error updating financial data', 
+      details: error.message 
+    });
   }
 };
 
+const shouldUpdate = async () => {
+  const now = new Date();
+  const hour = now.getHours();
+  
+  // Solo actualizar a las 8am y 6pm
+  if (hour !== 8 && hour !== 18) {
+    return false;
+  }
+
+  // Verificar si ya se actualizó en este período
+  const latestUpdate = await FinancialData.findOne()
+    .sort({ updatedAt: -1 });
+
+  if (!latestUpdate) return true;
+
+  const updateHour = new Date(latestUpdate.updatedAt).getHours();
+  const updatePeriod = hour < 12 ? 'morning' : 'afternoon';
+
+  // Evitar actualizaciones duplicadas en el mismo período
+  return latestUpdate.updatePeriod !== updatePeriod;
+};
 const getFinancialData = async (req, res) => {
   try {
     const allData = await FinancialData.find({});

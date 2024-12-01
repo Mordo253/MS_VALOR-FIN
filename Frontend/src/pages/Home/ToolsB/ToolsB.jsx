@@ -2,6 +2,26 @@ import bannerT from "../../../assets/bannerH.jpeg";
 import { Link } from 'react-router-dom';
 import { ToolsI } from '../../../components/HomeC/tools/ToolsI';
 
+const ToolsButton = () => {
+  const handleClick = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-4">
+      <Link 
+        to="/tools"
+        onClick={handleClick}
+        className="bg-[#C5A572] hover:bg-[#B49562] text-white text-sm font-semibold py-2 px-4 rounded-full inline-block w-full sm:w-auto text-center transition-colors duration-300"
+      >
+        Conocer más
+      </Link>
+    </div>
+  );
+};
 export const ToolsB = () => {
   // Definimos las variables de color basadas en el logo
   const primaryGray = '#808080';  // Gris principal
@@ -20,14 +40,7 @@ export const ToolsB = () => {
           <div className="mb-8">
             <ToolsI />
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link 
-              to="/tools"
-              className="bg-[#C5A572] hover:bg-[#B49562] text-white text-sm font-semibold py-2 px-4 rounded-full inline-block w-full sm:w-auto text-center transition-colors duration-300"
-            >
-              Conocer más
-            </Link>
-          </div>
+          <ToolsButton/>
         </div>
 
         {/* Sección Derecha (Imagen de fondo) */}

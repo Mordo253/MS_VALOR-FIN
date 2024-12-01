@@ -15,7 +15,6 @@ html, body {
   height: 100%;
   overflow-x: hidden;
 }
-
 /* Estructura principal */
 .hero-section {
   width: 100vw;
@@ -30,7 +29,6 @@ html, body {
   background: linear-gradient(to right, rgba(28, 28, 28, 0.98), rgba(71, 71, 71, 0.9));
   position: relative;
 }
-
 /* Contenido principal */
 .main-content {
   width: 100%;
@@ -40,7 +38,6 @@ html, body {
   position: relative;
 }
 
-/* Columna de texto */
 .text-column {
   padding: 0 5% 0 8%;
   display: flex;
@@ -50,10 +47,10 @@ html, body {
   position: relative;
 }
 
-/* Contenedor del título */
 .title-container {
   margin-bottom: 2rem;
   position: relative;
+  z-index: 2; /* Asegura que el título esté encima de los círculos */
 }
 
 .main-title {
@@ -74,13 +71,12 @@ html, body {
   font-size: clamp(0.9rem, 1.2vw, 1.1rem);
   margin-top: 0.5rem;
 }
-
 /* Círculos decorativos */
 .decorative-circles {
   position: absolute;
   display: flex;
   gap: 0.75rem;
-  z-index: 2;
+  z-index: 1; /* Los círculos estarán detrás del contenido */
 }
 
 .decorative-circles.top {
@@ -111,7 +107,6 @@ html, body {
 .circle.filled {
   background: rgba(251, 191, 36, 0.2);
 }
-
 /* Círculo gris */
 .gray-circle {
   position: absolute;
@@ -121,10 +116,9 @@ html, body {
   border-radius: 50%;
   left: 25%;
   bottom: 8%;
-  z-index: 1;
+  z-index: 1; /* Asegura que el círculo gris esté detrás del contenido */
   backdrop-filter: blur(4px);
 }
-
 /* Lista de servicios */
 .services-container {
   margin-top: 2rem;
@@ -136,7 +130,8 @@ html, body {
 .service-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  position: relative;
+  gap: 2rem;
   transition: transform 0.3s ease;
 }
 
@@ -157,7 +152,6 @@ html, body {
   line-height: 1.4;
   transition: color 0.3s ease;
 }
-
 /* Botón CTA */
 .cta-container {
   margin-top: 2rem;
@@ -183,7 +177,6 @@ html, body {
   color: #000000;
   transform: scale(1.05);
 }
-
 /* Columna de imagen */
 .image-column {
   position: relative;
@@ -203,7 +196,25 @@ html, body {
   inset: 0;
   background: linear-gradient(to right, rgba(0,0,0,0.4), rgba(0,0,0,0.1));
 }
+/* Columna de imagen */
+.image-column {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
 
+.banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.05);
+}
+
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(0,0,0,0.4), rgba(0,0,0,0.1));
+}
 /* Media queries */
 @media (max-width: 1280px) {
   .main-content {
@@ -222,25 +233,48 @@ html, body {
 @media (max-width: 1024px) {
   .main-content {
     grid-template-columns: 1fr;
+    padding: 0 2%;  /* Asegura que los elementos no queden pegados en pantallas medianas */
   }
 
   .text-column {
-    padding: 0 8%;
+    padding: 0 5%;  /* Ajuste de padding para pantallas más pequeñas */
   }
 
   .main-title {
     font-size: clamp(1.5rem, 2.5vw, 2rem);
   }
 
-  .image-column {
-    display: none;
+  /* Ajustes en los círculos decorativos */
+  .decorative-circles.top {
+    top: 5%;
+    left: 5%;
   }
 
+  .decorative-circles.middle {
+    top: 12%;
+    left: 5%;
+  }
+
+  .circle {
+    width: 0.4rem;
+    height: 0.4rem;
+  }
+
+  /* Ajustes en el círculo gris */
   .gray-circle {
     width: clamp(5rem, 7vw, 6rem);
     height: clamp(5rem, 7vw, 6rem);
     left: 20%;
     bottom: 6%;
+  }
+
+  .image-column {
+    display: none;  /* Ocultar la imagen en pantallas más pequeñas */
+  }
+
+  /* Ajustes en la lista de servicios */
+  .service-item {
+    gap: 2rem;
   }
 }
 
@@ -258,7 +292,7 @@ html, body {
   }
 
   .service-item {
-    gap: 0.75rem;
+    gap: 2rem;
   }
 
   .gray-circle {
@@ -283,7 +317,6 @@ html, body {
     height: 0.4rem;
   }
 }
-
 /* Optimizaciones de rendimiento */
 .banner-image, 
 .service-item,

@@ -73,16 +73,16 @@ export const HeroH = () => {
         <div className="w-full h-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
             {/* Columna de contenido */}
-            <div className="flex flex-col justify-center space-y-4 md:space-y-8 px-4 md:px-6 lg:px-12 z-10">
+            <div className="flex flex-col justify-center space-y-4 md:space-y-8 px-4 md:px-6 lg:px-12 relative top-8 z-10">
               <div className="space-y-2 md:space-y-3">
-                <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-tight">
+                <h2 className="text-xl sm:text-2xl md:text-4xl lg:text-3xl xl:text-4xl font-bold text-white leading-tight">
                   En MS De Valor te{' '}
                   <br className="hidden md:block" />
                   ayudamos a{' '}
                   <span className="text-amber-200">potencializar</span>
                   <br className="hidden md:block" />
                   tus finanzas
-                </h1>
+                </h2>
                 <p className="text-lg md:text-xl text-gray-300">
                   llevándolas al siguiente nivel
                 </p>

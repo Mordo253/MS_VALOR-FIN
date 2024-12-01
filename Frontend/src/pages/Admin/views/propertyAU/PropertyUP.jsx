@@ -30,34 +30,42 @@ const caracteristicasExternas = [
 
 export const PropertyUP = () => {
   const { id } = useParams();
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const { getProperty, updateProperty } = useProperties();
+const { isAuthenticated } = useAuth();
+const navigate = useNavigate();
+const { getProperty, updateProperty } = useProperties();
 
-  // Estados principales
-  const [formData, setFormData] = useState({
-    title: '',
-    pais: 'Colombia',
-    departamento: '',
-    ciudad: '',
-    zona: '',
-    areaConstruida: 0,
-    areaTerreno: 0,
-    areaPrivada: 0,
-    alcobas: 0,
-    costo: 0,
-    banos: 0,
-    garaje: 0,
-    estrato: 1,
-    piso: 0,
-    tipoInmueble: '',
-    tipoNegocio: '',
-    estado: '',
-    valorAdministracion: 0,
-    anioConstruccion: new Date().getFullYear(),
-    description: '',
-    caracteristicas: []
-  });
+// Estados principales
+const [formData, setFormData] = useState({
+  title: '',
+  pais: 'Colombia',
+  departamento: '',
+  ciudad: '',
+  zona: '',
+  areaConstruida: 0,
+  areaTerreno: 0,
+  areaPrivada: 0,
+  alcobas: 0,
+  costo: 0,
+  banos: 0,
+  garaje: 0,
+  estrato: 1,
+  piso: 0,
+  tipoInmueble: '',
+  tipoNegocio: '',
+  estado: '',
+  valorAdministracion: 0,
+  anioConstruccion: new Date().getFullYear(),
+  description: '',
+  caracteristicas: []
+});
+
+
+// Función para obtener el token
+const getToken = () => {
+  const token = Cookies.get('token');
+  console.log('Token recibido:', token); // Verifica que el token se recupere correctamente
+  return token;
+};
 
   // Estados para características
   const [selectedCaracteristicas, setSelectedCaracteristicas] = useState({
@@ -66,27 +74,36 @@ export const PropertyUP = () => {
   });
 
   // Estados para imágenes
-  const [images, setImages] = useState([]);
-  const [imagesToDelete, setImagesToDelete] = useState([]);
-  const [newImages, setNewImages] = useState([]);
-  const [mainImageIndex, setMainImageIndex] = useState(0);
+  const [images, setImages] = useState([]);  // Imágenes actuales
+  const [imagesToDelete, setImagesToDelete] = useState([]);  // Imágenes a eliminar
+  const [newImages, setNewImages] = useState([]);  // Nuevas imágenes
+  const [mainImageIndex, setMainImageIndex] = useState(0);  // Índice de imagen principal
 
   // Estados de UI
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  // Verificar ID y autenticación
+ // Verificar ID y autenticación
   useEffect(() => {
     if (!id) {
       setError('ID de propiedad no proporcionado');
       navigate('/properties');
       return;
     }
+
+    // Verificar si el token está presente en las cookies
+    const token = getToken();  // Recuperamos el token desde las cookies
+    if (!token) {
+      navigate('/login');
+      return;  // Si no hay token, redirigimos al login
+    }
+
     if (!isAuthenticated) {
       navigate('/login');
     }
   }, [id, isAuthenticated, navigate]);
+
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -131,6 +148,7 @@ export const PropertyUP = () => {
     loadProperty();
   }, [id, getProperty]);
 
+
   // Limpiar URLs de objetos al desmontar
   useEffect(() => {
     return () => {
@@ -141,6 +159,7 @@ export const PropertyUP = () => {
       });
     };
   }, [images]);
+
 
   // Manejadores de cambios
   const handleInputChange = (e) => {
@@ -167,87 +186,108 @@ export const PropertyUP = () => {
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    
-    if (images.length + files.length > (formData?.imageLimit || 15)) {
-      setError(`No puedes subir más de ${formData?.imageLimit || 15} imágenes`);
+  
+    if (images.length + files.length > 15) {
+      setError(`No puedes subir más de 15 imágenes`);
       return;
     }
-
+  
+    // Validar tipo de archivo (solo imágenes)
     const invalidFiles = files.filter(file => !file.type.startsWith('image/'));
     if (invalidFiles.length > 0) {
       setError('Solo se permiten archivos de imagen');
       return;
     }
-
-    const maxSize = 5 * 1024 * 1024; // 5MB
+  
+    // Validar tamaño máximo (5MB)
+    const maxSize = 5 * 1024 * 1024;
     const oversizedFiles = files.filter(file => file.size > maxSize);
     if (oversizedFiles.length > 0) {
       setError('Algunas imágenes son demasiado grandes. Máximo 5MB por imagen');
       return;
     }
-
+  
+    // Agregar nuevas imágenes
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImages(prev => [...prev, {
-          public_id: URL.createObjectURL(file),
-          secure_url: URL.createObjectURL(file),
-          file: file
-        }]);
+        const image = new Image();
+        image.onload = () => {
+          // Agregar la información extraída de la imagen
+          setImages(prev => [...prev, {
+            public_id: URL.createObjectURL(file),
+            secure_url: URL.createObjectURL(file),
+            file: file,
+            width: image.width,
+            height: image.height,
+            format: file.type.split('/')[1], // 'image/png' => 'png'
+            resource_type: 'image' // Puede ser 'image' o el tipo de recurso que maneje tu backend
+          }]);
+        };
+        image.src = reader.result;
       };
       reader.readAsDataURL(file);
     });
-
+  
     setNewImages(prev => [...prev, ...files]);
     setError(null);
   };
+  
+  
+  
+  
+  // Función para eliminar una imagen
+const handleImageDelete = (publicId) => {
+  if (publicId.startsWith('blob:')) {
+    setImages(prev => prev.filter(img => img.public_id !== publicId));
+    setNewImages(prev => prev.filter(file => URL.createObjectURL(file) !== publicId));
+    URL.revokeObjectURL(publicId);
+  } else {
+    setImagesToDelete(prev => [...prev, publicId]);
+    setImages(prev => prev.filter(img => img.public_id !== publicId));
+  }
 
-  const handleImageDelete = (publicId) => {
-    if (publicId.startsWith('blob:')) {
-      setImages(prev => prev.filter(img => img.public_id !== publicId));
-      setNewImages(prev => prev.filter(file => URL.createObjectURL(file) !== publicId));
-      URL.revokeObjectURL(publicId);
-    } else {
-      setImagesToDelete(prev => [...prev, publicId]);
-      setImages(prev => prev.filter(img => img.public_id !== publicId));
-    }
+  // Ajustar mainImageIndex si es necesario
+  if (mainImageIndex >= images.length - 1) {
+    setMainImageIndex(0);
+  }
+};
 
-    // Ajustar mainImageIndex si es necesario
-    if (mainImageIndex >= images.length - 1) {
-      setMainImageIndex(0);
-    }
-  };
-
+  // Función para configurar la imagen principal
   const handleSetMainImage = (index) => {
     if (index >= 0 && index < images.length) {
-      // Crear una copia del array de imágenes
       const updatedImages = [...images];
-      // Remover la imagen seleccionada de su posición actual
       const [selectedImage] = updatedImages.splice(index, 1);
-      // Insertar la imagen seleccionada al inicio del array (posición 0)
       updatedImages.unshift(selectedImage);
-      // Actualizar el estado de las imágenes con el nuevo orden
       setImages(updatedImages);
-      // Actualizar el índice de la imagen principal a 0
       setMainImageIndex(0);
     }
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
+  
     try {
       setLoading(true);
-
+  
+      // Verificar si el usuario está autenticado
       if (!isAuthenticated) {
         navigate('/login');
         throw new Error('No hay sesión activa. Por favor, inicie sesión.');
       }
-
+  
       if (!id) {
         throw new Error('ID de propiedad no encontrado');
       }
-
+  
+      // Recuperar el token desde las cookies
+      const token = getToken();
+  
+      // Si no se recibe token, lanzar un error
+      if (!token) {
+        throw new Error('Token no encontrado. Por favor, inicie sesión nuevamente.');
+      }
+  
       // Formatear las características según el modelo
       const caracteristicasFormateadas = [
         ...selectedCaracteristicas.internas.map(name => ({
@@ -259,25 +299,31 @@ export const PropertyUP = () => {
           type: 'externa'
         }))
       ];
-
-      // Preparar los datos para enviar - ahora las imágenes ya están en el orden correcto
+  
+      // Preparar los datos para enviar
       const updatedFormData = {
         ...formData,
         caracteristicas: caracteristicasFormateadas,
-        images: images // Ya no necesitamos reorganizar las imágenes aquí porque se mantienen ordenadas
+        images: images.map(img => ({
+          public_id: img.public_id,
+          secure_url: img.secure_url
+        })),
+        imagesToDelete: imagesToDelete.map(img => img.public_id) // Utilizar el public_id para eliminar imágenes
       };
-
+  
       console.log('Datos a enviar:', updatedFormData);
-
+  
+      // Realizar la solicitud PUT con el token en los encabezados
       const response = await fetch(`${API_URL}/property/properties/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         credentials: 'include',
         body: JSON.stringify(updatedFormData),
       });
-
+  
       if (!response.ok) {
         if (response.status === 401) {
           navigate('/login');
@@ -286,15 +332,15 @@ export const PropertyUP = () => {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al actualizar la propiedad');
       }
-
+  
       const result = await response.json();
       setSuccess(true);
       console.log('Propiedad actualizada:', result);
-      
+  
       setTimeout(() => {
         navigate('/properties');
       }, 2000);
-
+  
     } catch (error) {
       setError(error.message);
       console.error('Error en la actualización:', error);
@@ -302,7 +348,8 @@ export const PropertyUP = () => {
       setLoading(false);
     }
   };
-
+  
+  
   // Renderizado condicional para el estado de carga
   if (loading) {
     return (

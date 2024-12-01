@@ -18,7 +18,7 @@
                 Si quieres tener ingresos extras, con comisiones sin tope y además manejar tu tiempo.
               </p> 
               
-              <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg flex items-center gap-3 transition-colors">
+              <button className="relative bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg flex items-center gap-3 transition-colors z-10">
                 <LuBookmark />  
                 <a href="https://forms.gle/xYUR5rkCETamEVyXA" target='_blank'>
                     Aplica Aquí

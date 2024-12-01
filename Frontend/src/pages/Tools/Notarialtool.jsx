@@ -69,10 +69,10 @@ export const NotarialCalculator = () => {
       retencion,
       gastosNotariales: notariales,
       iva,
-      copias: 76000, // Valor fijo aproximado
+      copias: 70000, // Valor fijo aproximado
       impuestoBeneficencia,
       impuestoRegistro,
-      certificado: 18000, // Valor fijo aproximado
+      certificado: 20900, // Valor fijo aproximado
     });
   };
 

@@ -148,7 +148,7 @@ export const updateProperty = async (req, res) => {
       for (const publicId of imagesToDelete) {
         if (!publicId.startsWith('blob:')) {
           try {
-            await deleteImage(publicId);
+            await deleteImage(publicId); // Función para eliminar imagen de Cloudinary
           } catch (error) {
             console.error(`Error al eliminar imagen ${publicId}:`, error);
           }
@@ -161,7 +161,7 @@ export const updateProperty = async (req, res) => {
         if (img.file) {
           // Es una nueva imagen que necesita ser subida
           try {
-            const result = await uploadImage(img.file);
+            const result = await uploadImage(img.file);  // Subir imagen con el archivo
             processedImages.push({
               public_id: result.public_id,
               secure_url: result.secure_url,
@@ -197,6 +197,7 @@ export const updateProperty = async (req, res) => {
     });
   }
 };
+
 
 // Otras funciones permanecen igual...
 

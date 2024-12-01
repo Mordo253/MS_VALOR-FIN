@@ -4,10 +4,15 @@ import mongoose from "mongoose";
 const cloudinaryImageSchema = new mongoose.Schema({
   public_id: { type: String, required: true },
   secure_url: { type: String, required: true },
-  width: { type: Number, required: true },
-  height: { type: Number, required: true },
-  format: { type: String, required: true },
-  resource_type: { type: String, required: true, enum: ['image', 'video', 'raw', 'auto'] },
+  width: { type: Number, required: true, default: 540 },  // Valor predeterminado
+  height: { type: Number, required: true, default: 1170 }, // Valor predeterminado
+  format: { type: String, required: true, default: 'jpg' }, // Valor predeterminado
+  resource_type: { 
+    type: String, 
+    required: true, 
+    enum: ['image', 'video', 'raw', 'auto'], 
+    default: 'image'  // Valor predeterminado
+  },
 });
 
 // Características internas y externas válidas
