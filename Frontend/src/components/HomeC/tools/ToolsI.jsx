@@ -39,7 +39,8 @@ const Modal = ({ isOpen, onClose, children, isNotarial }) => {
 
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      modalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Eliminado scrollIntoView para evitar el desplazamiento no deseado
+      // modalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleEscape);
     } else {
@@ -68,9 +69,6 @@ const Modal = ({ isOpen, onClose, children, isNotarial }) => {
         }`}
       >
         <div className="sticky top-0 bg-white p-4 border-b border-gray-200 flex justify-between items-center">
-          {/* <h2 className="text-lg font-semibold text-gray-900">
-            {children?.type?.name || 'Modal'}
-          </h2> */}
           <button 
             onClick={() => {
               document.body.style.overflow = 'unset';
@@ -88,6 +86,7 @@ const Modal = ({ isOpen, onClose, children, isNotarial }) => {
     </div>
   );
 };
+
 
 const CreditSimulator = ({ onClose }) => {
   const [amount, setAmount] = useState('');

@@ -12,13 +12,22 @@ const ToolsButton = () => {
 
   return (
     <div className="flex flex-col sm:flex-row gap-4">
-      <Link 
-        to="/tools"
-        onClick={handleClick}
-        className="bg-[#C5A572] hover:bg-[#B49562] text-white text-sm font-semibold py-2 px-4 rounded-full inline-block w-full sm:w-auto text-center transition-colors duration-300"
-      >
-        Conocer más
-      </Link>
+        {/* CTA Button */}
+        <Link 
+          to="/tools"
+          className="inline-block"
+        >
+          <button 
+            className="bg-[#b4a160] text-black px-6 sm:px-8 py-2 sm:py-3 
+                      rounded-full font-semibold hover:bg-gray-100 
+                      transition-all duration-300 text-sm sm:text-base
+                      focus:outline-none focus:ring-2 focus:ring-offset-2 
+                      focus:ring-[#b4a160] transform hover:scale-105
+                      active:scale-95 shadow-lg hover:shadow-xl"
+          >
+            CONOCER MÁS
+          </button>
+        </Link>
     </div>
   );
 };
