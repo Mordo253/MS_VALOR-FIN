@@ -7,8 +7,8 @@ import { PropertyAU } from '../views/propertyAU/PropertyAU';
 import { Adminnav } from '../components/Navbars/Adminnav';
 import { PropertyForm } from '../views/propertyAU/PropertyForm';
 import { Carform } from '../views/carAU/Carform';
-import { PropertyEditList } from '../views/propertyAU/EditPropertyList';
-import { PropertyUP } from '../views/propertyAU/PropertyUP';
+import { PropertyEditList } from '../views/propertyAU/PropertyEditList';
+import PropertyUP from '../views/propertyAU/Property/PropertyUP';
 
 export const Admin = () => {
   return (

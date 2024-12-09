@@ -102,10 +102,17 @@ export const HeroH = () => {
               </div>
 
               <div className="cta-container">
-                <button className="cta-button">
-                  <Phone className="phone-icon" />
-                  <span>Cotiza aquí</span>
-                </button>
+                <a 
+                  href={`https://wa.me/573160420188?text=Hola MS DE VALOR, estoy interesado en sus servicios`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <button className="cta-button">
+                    <Phone className="phone-icon" />
+                    <span>Cotiza aquí</span>
+                  </button>
+                </a>
                 <div className="button-decoration" />
               </div>
             </div>

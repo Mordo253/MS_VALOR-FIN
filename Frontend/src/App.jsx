@@ -18,8 +18,6 @@ import { ToolsPage } from "./pages/Tools/ToolsPage";
 import { Admin } from "./pages/Admin/layout/Admin";
 import { Footer } from "./components/Footer/Footer";
 import { Indicador } from './components/ecommerI/EcommerI';
-import { ToastContainer } from 'react-toastify';
-
 
 // Componente ScrollToTop separado
 const ScrollHandler = () => {
@@ -115,7 +113,6 @@ const AppContent = () => {
           <VehicleProvider>
             <main>
               <AppContent />
-              <ToastContainer />
             </main>
           </VehicleProvider>
         </PropertyProvider>
