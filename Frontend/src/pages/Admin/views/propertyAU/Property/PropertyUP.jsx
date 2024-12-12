@@ -1,140 +1,186 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProperties } from "../../../../../context/PropertyContex";
-import { API_URL } from "../../../../../config";
-import Cookies from "js-cookie";
 import { useAuth } from "../../../../../context/AuthContext";
 import PropertyImg from "./PropertyImg";
 import PropertyFormUP from "./PropertyFormUP";
 import Caracteristicas from "./PropertyCaract";
 
 const PropertyUP = () => {
-  const { id } = useParams(); // Obtenemos el id de la propiedad desde la URL
+  const { id } = useParams();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { getProperty } = useProperties(); // Función para obtener datos de la propiedad
+  const { getProperty, updateProperty } = useProperties();
 
-  // Estados principales
-  const [propertyData, setPropertyData] = useState(null);
-  const [images, setImages] = useState([]); // Imágenes de la propiedad
-  const [imagesToDelete, setImagesToDelete] = useState([]); // Imágenes para eliminar
+  const [formData, setFormData] = useState({
+    title: "",
+    codigo: "",
+    pais: "",
+    departamento: "",
+    ciudad: "",
+    zona: "",
+    areaConstruida: "",
+    areaTerreno: "",
+    areaPrivada: "",
+    alcobas: "",
+    costo: "",
+    banos: "",
+    garaje: "",
+    estrato: "",
+    piso: "",
+    tipoInmueble: "",
+    tipoNegocio: "",
+    estado: "",
+    disponible: true,
+    valorAdministracion: "",
+    anioConstruccion: "",
+    description: "",
+  });
+
+  const [images, setImages] = useState([]);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
   const [selectedCaracteristicas, setSelectedCaracteristicas] = useState({
     internas: [],
     externas: [],
   });
 
-  // Estados de UI
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Redirigir si el ID no existe o el usuario no está autenticado
   useEffect(() => {
     if (!id || !isAuthenticated) {
       navigate("/properties");
+      return;
     }
   }, [id, isAuthenticated, navigate]);
 
-  // Cargar datos iniciales de la propiedad
-  useEffect(() => {
-    const loadProperty = async () => {
-      try {
-        setLoading(true);
-        console.log("Obteniendo propiedad con ID:", id);
-        const response = await getProperty(id);
-        console.log("Respuesta del backend:", response);
+  const loadPropertyData = useCallback(async () => {
+    if (!id || !isAuthenticated) return;
 
-        if (response && response.data) {
-          setPropertyData(response.data);
-          setImages(response.data.images || []);
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getProperty(id);
 
-          // Configurar características a partir de la propiedad
-          const internas = response.data.caracteristicas
-            .filter((c) => c.type === "interna")
-            .map((c) => c.name);
-          const externas = response.data.caracteristicas
-            .filter((c) => c.type === "externa")
-            .map((c) => c.name);
-
-          console.log("Características internas:", internas);
-          console.log("Características externas:", externas);
-
-          setSelectedCaracteristicas({ internas, externas });
-        } else {
-          setError("No se encontraron datos de la propiedad");
-        }
-      } catch (err) {
-        setError("Error al cargar la propiedad");
-        console.error("Error al obtener la propiedad:", err);
-      } finally {
-        setLoading(false);
+      if (!response || !response.data) {
+        throw new Error("No se encontraron datos de la propiedad");
       }
-    };
 
-    loadProperty();
-  }, [id, getProperty]);
+      const propertyData = response.data;
+      setFormData(prev => ({
+        ...prev,
+        ...propertyData,
+        areaConstruida: Number(propertyData.areaConstruida) || "",
+        areaTerreno: Number(propertyData.areaTerreno) || "",
+        areaPrivada: Number(propertyData.areaPrivada) || "",
+        alcobas: Number(propertyData.alcobas) || "",
+        costo: Number(propertyData.costo) || "",
+        banos: Number(propertyData.banos) || "",
+        garaje: Number(propertyData.garaje) || "",
+        estrato: Number(propertyData.estrato) || "",
+        piso: Number(propertyData.piso) || "",
+        valorAdministracion: Number(propertyData.valorAdministracion) || "",
+        anioConstruccion: Number(propertyData.anioConstruccion) || "",
+        disponible: Boolean(propertyData.disponible),
+      }));
+
+      setImages(propertyData.images || []);
+
+      const internas = propertyData.caracteristicas
+        .filter((c) => c.type === "interna")
+        .map((c) => c.name);
+      const externas = propertyData.caracteristicas
+        .filter((c) => c.type === "externa")
+        .map((c) => c.name);
+
+      setSelectedCaracteristicas({ internas, externas });
+
+    } catch (err) {
+      setError(err.message || "Error al cargar la propiedad");
+    } finally {
+      setLoading(false);
+    }
+  }, [id, isAuthenticated, getProperty]);
+
+  useEffect(() => {
+    loadPropertyData();
+  }, [loadPropertyData]);
+
+  const handleFormDataChange = useCallback((newData) => {
+    setFormData(newData);
+  }, []);
+
+  const handleCaracteristicasChange = useCallback((newCaracteristicas) => {
+    setSelectedCaracteristicas(newCaracteristicas);
+  }, []);
+
+  const handleImageUpdate = useCallback(({ images: updatedImages, imagesToDelete: toDelete }) => {
+    setImages(updatedImages);
+    setImagesToDelete(toDelete);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
+      if (!formData.title || !formData.ciudad || !formData.costo) {
+        throw new Error("Por favor complete todos los campos requeridos");
+      }
+
       if (!selectedCaracteristicas.internas.length && !selectedCaracteristicas.externas.length) {
-        setError("Debe seleccionar al menos una característica");
-        return;
+        throw new Error("Debe seleccionar al menos una característica");
       }
 
-      setLoading(true);
+      setIsSubmitting(true);
+      setError(null);
 
-      const token = Cookies.get("token");
-      console.log("Token recibido:", token);
+      const dataToSend = {
+        ...formData,
+        areaConstruida: Number(formData.areaConstruida) || 0,
+        areaTerreno: Number(formData.areaTerreno) || 0,
+        areaPrivada: Number(formData.areaPrivada) || 0,
+        alcobas: Number(formData.alcobas) || 0,
+        costo: Number(formData.costo) || 0,
+        banos: Number(formData.banos) || 0,
+        garaje: Number(formData.garaje) || 0,
+        estrato: Number(formData.estrato) || 0,
+        piso: Number(formData.piso) || 0,
+        valorAdministracion: Number(formData.valorAdministracion) || 0,
+        anioConstruccion: Number(formData.anioConstruccion) || 0,
 
-      if (!token) {
-        navigate("/login");
-        throw new Error("Token no encontrado. Por favor, inicia sesión.");
-      }
+        caracteristicas: [
+          ...selectedCaracteristicas.internas.map(name => ({
+            name,
+            type: "interna",
+          })),
+          ...selectedCaracteristicas.externas.map(name => ({
+            name,
+            type: "externa",
+          })),
+        ],
 
-      // Formatear características
-      const formattedCaracteristicas = [
-        ...selectedCaracteristicas.internas.map((name) => ({
-          name,
-          type: "interna",
-        })),
-        ...selectedCaracteristicas.externas.map((name) => ({
-          name,
-          type: "externa",
-        })),
-      ];
-
-      // Datos a enviar
-      const updatedData = {
-        ...propertyData,
-        caracteristicas: formattedCaracteristicas,
-        images: images.map((img) => ({
-          public_id: img.public_id,
-          secure_url: img.secure_url,
-        })),
-        imagesToDelete: imagesToDelete.map((img) => img.public_id),
+        images: images,
+        imagesToDelete: imagesToDelete
       };
 
-      const response = await fetch(`${API_URL}/property/properties/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify(updatedData),
-      });
+      const response = await updateProperty(id, dataToSend);
 
-      if (!response.ok) {
-        throw new Error("Error al actualizar la propiedad. Asegúrese de estar autenticado.");
+      if (response && response.data) {
+        setSuccess(true);
+        setTimeout(() => {
+          navigate("/properties");
+        }, 1500);
+      } else {
+        throw new Error("No se recibió respuesta del servidor");
       }
 
-      setSuccess(true);
-      navigate("/properties");
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Error al actualizar la propiedad");
+      setSuccess(false);
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -147,42 +193,59 @@ const PropertyUP = () => {
   }
 
   return (
-    <div className="property-up">
-      <h1>Actualizar Propiedad</h1>
-      {error && <p className="error">{error}</p>}
-      {success && <p className="success">Propiedad actualizada exitosamente</p>}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Actualizar Propiedad</h1>
 
-      <form onSubmit={handleSubmit}>
-        {/* Componente PropertyFormUP */}
-        <PropertyFormUP propertyId={id} />
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
 
-        {/* Componente Características */}
-        <Caracteristicas
-          initialSelected={selectedCaracteristicas} // Pasa el estado actual
-          onChange={setSelectedCaracteristicas} // Maneja los cambios
-        />
+      {success && (
+        <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+          <p className="text-sm text-green-700">Propiedad actualizada exitosamente</p>
+        </div>
+      )}
 
-        {/* Gestión de imágenes */}
-        <PropertyImg
-          initialImages={images}
-          onImageUpdate={({ images: updatedImages, imagesToDelete: toDelete }) => {
-            setImages(updatedImages);
-            setImagesToDelete(toDelete);
-          }}
-        />
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+          <PropertyFormUP
+            initialData={formData}
+            onChange={handleFormDataChange}
+          />
+        </div>
 
-        {/* Botón de envío */}
-        <button
-          type="submit"
-          className="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          disabled={loading}
-        >
-          {loading ? "Guardando..." : "Actualizar Propiedad"}
-        </button>
+        <div className="bg-white shadow-sm rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-6">Características de la Propiedad</h2>
+          <Caracteristicas
+            initialSelected={selectedCaracteristicas}
+            onChange={handleCaracteristicasChange}
+          />
+        </div>
+
+        <div className="bg-white shadow-sm rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-6">Imágenes de la Propiedad</h2>
+          <PropertyImg
+            initialImages={images}
+            onImageUpdate={handleImageUpdate}
+          />
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`inline-flex justify-center px-6 py-3 border border-transparent
+              text-base font-medium rounded-md shadow-sm text-white
+              ${isSubmitting ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+          >
+            {isSubmitting ? "Guardando..." : "Actualizar Propiedad"}
+          </button>
+        </div>
       </form>
     </div>
   );
 };
 
 export default PropertyUP;
-

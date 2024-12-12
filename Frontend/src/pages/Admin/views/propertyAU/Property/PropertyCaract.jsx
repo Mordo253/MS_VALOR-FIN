@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 
 const caracteristicasInternas = [
   "Admite mascotas", "Armarios Empotrados", "Baño en habitación principal",
@@ -23,62 +23,106 @@ const caracteristicasExternas = [
 ];
 
 const Caracteristicas = ({ initialSelected = { internas: [], externas: [] }, onChange }) => {
-  const [selectedCaracteristicas, setSelectedCaracteristicas] = useState(initialSelected);
+  // Estado local con validación de estructura inicial
+  const [selectedCaracteristicas, setSelectedCaracteristicas] = useState(() => ({
+    internas: Array.isArray(initialSelected.internas) ? initialSelected.internas : [],
+    externas: Array.isArray(initialSelected.externas) ? initialSelected.externas : []
+  }));
 
-  // Asegurarse de que el componente reciba los valores iniciales correctamente
+  // Función para verificar si una característica está seleccionada
+  const isSelected = useMemo(() => {
+    return (caracteristica, tipo) => {
+      const tipoPlural = tipo === "interna" ? "internas" : "externas";
+      return selectedCaracteristicas[tipoPlural].includes(caracteristica);
+    };
+  }, [selectedCaracteristicas]);
+
+  // Efecto para sincronizar con props iniciales
   useEffect(() => {
-    setSelectedCaracteristicas(initialSelected);
+    const hasChanges = JSON.stringify(initialSelected) !== JSON.stringify(selectedCaracteristicas);
+    if (hasChanges) {
+      setSelectedCaracteristicas({
+        internas: Array.isArray(initialSelected.internas) ? initialSelected.internas : [],
+        externas: Array.isArray(initialSelected.externas) ? initialSelected.externas : []
+      });
+    }
   }, [initialSelected]);
 
-  // Manejo de cambios en las características
+  // Manejador de cambios mejorado
   const handleCaracteristicaChange = (caracteristica, tipo) => {
-    const tipoKey = tipo === "interna" ? "internas" : "externas";
+    const tipoPlural = tipo === "interna" ? "internas" : "externas";
 
-    setSelectedCaracteristicas((prev) => {
-      const updated = prev[tipoKey].includes(caracteristica)
-        ? prev[tipoKey].filter((c) => c !== caracteristica) // Eliminar
-        : [...prev[tipoKey], caracteristica]; // Agregar
+    setSelectedCaracteristicas(prevState => {
+      const newState = {
+        ...prevState,
+        [tipoPlural]: prevState[tipoPlural].includes(caracteristica)
+          ? prevState[tipoPlural].filter(c => c !== caracteristica)
+          : [...prevState[tipoPlural], caracteristica].sort()
+      };
 
-      const newState = { ...prev, [tipoKey]: updated };
-      if (onChange) onChange(newState); // Llamamos a onChange para propagar el cambio
+      // Notificar cambios al componente padre
+      if (onChange) {
+        onChange(newState);
+      }
+
       return newState;
     });
   };
 
-  // Renderizar los checkboxes para un grupo
+  // Componente de checkbox mejorado
+  const CaracteristicaCheckbox = ({ caracteristica, tipo }) => (
+    <div className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded-md transition-colors">
+      <div className="flex items-center h-5">
+        <input
+          type="checkbox"
+          id={`${tipo}-${caracteristica}`}
+          checked={isSelected(caracteristica, tipo)}
+          onChange={() => handleCaracteristicaChange(caracteristica, tipo)}
+          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-offset-0"
+        />
+      </div>
+      <div className="ml-3 text-sm">
+        <label
+          htmlFor={`${tipo}-${caracteristica}`}
+          className="font-medium text-gray-700 cursor-pointer hover:text-blue-600 transition-colors"
+        >
+          {caracteristica}
+        </label>
+      </div>
+    </div>
+  );
+
+  // Renderizado de grupo de características
   const renderCheckboxGroup = (caracteristicas, tipo) => (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {caracteristicas.map((caracteristica) => (
-        <div key={caracteristica} className="flex items-center">
-          <input
-            type="checkbox"
-            id={`${tipo}-${caracteristica}`}
-            checked={selectedCaracteristicas[tipo]?.includes(caracteristica) || false} // Verificar si la característica está seleccionada
-            onChange={() => handleCaracteristicaChange(caracteristica, tipo)} // Llamar la función para manejar el cambio
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label
-            htmlFor={`${tipo}-${caracteristica}`}
-            className="ml-2 block text-sm text-gray-700"
-          >
-            {caracteristica}
-          </label>
-        </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+      {caracteristicas.map(caracteristica => (
+        <CaracteristicaCheckbox
+          key={`${tipo}-${caracteristica}`}
+          caracteristica={caracteristica}
+          tipo={tipo}
+        />
       ))}
     </div>
   );
 
+  // Debug info
+  useEffect(() => {
+    console.log('Características seleccionadas:', selectedCaracteristicas);
+  }, [selectedCaracteristicas]);
+
   return (
-    <div className="space-y-6">
-      {/* Características Internas */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900">Características Internas</h3>
+    <div className="space-y-8">
+      <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Características Internas ({selectedCaracteristicas.internas.length})
+        </h3>
         {renderCheckboxGroup(caracteristicasInternas, "interna")}
       </div>
 
-      {/* Características Externas */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900">Características Externas</h3>
+      <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Características Externas ({selectedCaracteristicas.externas.length})
+        </h3>
         {renderCheckboxGroup(caracteristicasExternas, "externa")}
       </div>
     </div>

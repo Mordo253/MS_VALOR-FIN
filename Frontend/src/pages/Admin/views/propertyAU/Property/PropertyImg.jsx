@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => {
   const [images, setImages] = useState(initialImages); // Imágenes actuales
@@ -37,9 +37,9 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
           setImages((prev) => [
             ...prev,
             {
-              public_id: URL.createObjectURL(file),
-              secure_url: URL.createObjectURL(file),
-              file,
+              public_id: file.name,  // Usamos el nombre del archivo o algo único para identificar
+              secure_url: URL.createObjectURL(file),  // Podemos seguir utilizando una URL temporal para la vista previa
+              file,  // Guardamos el archivo real para enviarlo al backend
               width: image.width,
               height: image.height,
               format: file.type.split("/")[1],
@@ -85,9 +85,22 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
     }
   };
 
-  // Enviar cambios al componente padre
-  React.useEffect(() => {
-    onImageUpdate && onImageUpdate({ images, imagesToDelete, newImages });
+  // Enviar cambios al componente padre solo cuando se haga submit
+  useEffect(() => {
+    if (onImageUpdate) {
+      // Al enviar las imágenes, se pasan tres cosas al componente padre:
+      // 1. Las imágenes actuales (con URL temporal).
+      // 2. Las imágenes que se eliminarán (public_id).
+      // 3. Las nuevas imágenes que se han añadido (archivos).
+      const formattedImages = images.map((img) => ({
+        public_id: img.public_id,
+        secure_url: img.secure_url,
+        resource_type: img.resource_type,
+      }));
+
+      // Envía el objeto con las imágenes y los IDs a eliminar
+      onImageUpdate({ images: formattedImages, imagesToDelete, newImages });
+    }
   }, [images, imagesToDelete, newImages, onImageUpdate]);
 
   return (
@@ -129,11 +142,7 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
                 <button
                   type="button"
                   onClick={() => handleSetMainImage(index)}
-                  className={`absolute bottom-2 right-2 px-2 py-1 rounded-md transition-all ${
-                    index === 0
-                      ? "bg-blue-500 text-white opacity-100"
-                      : "bg-gray-500 text-white opacity-0 group-hover:opacity-100"
-                  }`}
+                  className={`absolute bottom-2 right-2 px-2 py-1 rounded-md transition-all ${index === 0 ? "bg-blue-500 text-white opacity-100" : "bg-gray-500 text-white opacity-0 group-hover:opacity-100"}`}
                 >
                   {index === 0 ? "Principal" : "Hacer principal"}
                 </button>
@@ -147,12 +156,7 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
       <div className="mt-4">
         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
-            <svg
-              className="w-10 h-10 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -160,12 +164,8 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
                 d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
               />
             </svg>
-            <p className="mt-2 text-sm text-gray-500">
-              Clic para seleccionar imágenes
-            </p>
-            <p className="text-xs text-gray-500">
-              PNG, JPG (máx. {imageLimit} imágenes)
-            </p>
+            <p className="mt-2 text-sm text-gray-500">Clic para seleccionar imágenes</p>
+            <p className="text-xs text-gray-500">PNG, JPG (máx. {imageLimit} imágenes)</p>
           </div>
           <input
             type="file"
@@ -178,10 +178,7 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
         {newImages.length > 0 && (
           <div className="mt-2">
             <p className="text-sm text-gray-600">
-              {newImages.length}{" "}
-              {newImages.length === 1
-                ? "nueva imagen seleccionada"
-                : "nuevas imágenes seleccionadas"}
+              {newImages.length} {newImages.length === 1 ? "nueva imagen seleccionada" : "nuevas imágenes seleccionadas"}
             </p>
           </div>
         )}

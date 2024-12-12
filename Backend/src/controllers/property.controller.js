@@ -186,8 +186,9 @@ export const updateProperty = async (req, res) => {
     // Guardar los cambios
     await property.save();
 
-    // Enviar respuesta exitosa
-    res.status(200).json(property);
+    // Enviar respuesta exitosa con el objeto envuelto en 'data'
+    res.status(200).json({ data: property });
+
 
   } catch (error) {
     console.error("Error al actualizar la propiedad:", error);

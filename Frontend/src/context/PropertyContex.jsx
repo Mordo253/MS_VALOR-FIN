@@ -20,7 +20,7 @@ export const PropertyProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-  
+
       const response = await axios.get(`${API_URL}/property/all-properties`);
       if (response.data && Array.isArray(response.data.data)) {
         setProperties(response.data.data);
@@ -40,7 +40,7 @@ export const PropertyProvider = ({ children }) => {
   }, []);
 
   // Filtrar propiedades en función de los filtros proporcionados
-  const filterProperties = (filters) => {
+  const filterProperties = useCallback((filters) => {
     let filtered = properties;
 
     if (filters.zona) {
@@ -58,22 +58,39 @@ export const PropertyProvider = ({ children }) => {
     if (filters.alcobas) {
       filtered = filtered.filter((property) => property.alcobas === parseInt(filters.alcobas, 10));
     }
+
     if (filters.banos) {
       filtered = filtered.filter((property) => property.banos === parseInt(filters.banos, 10));
     }
 
     setFilteredProperties(filtered);
-  };
+  }, [properties]);
 
+  // Crear nueva propiedad
   const createProperty = async (propertyData) => {
     try {
-      const response = await axios.post(`${API_URL}/property/properties`, propertyData, {
+      const formData = new FormData();
+
+      // Agregar campos básicos
+      Object.keys(propertyData).forEach(key => {
+        if (key === 'caracteristicas' || key === 'images') {
+          formData.append(key, JSON.stringify(propertyData[key]));
+        } else {
+          formData.append(key, propertyData[key]);
+        }
+      });
+
+      const response = await axios.post(`${API_URL}/property/properties`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      setProperties([...properties, response.data]);
-      setFilteredProperties([...properties, response.data]);
+
+      if (response.data && response.data.data) {
+        setProperties(prevProperties => [...prevProperties, response.data.data]);
+        setFilteredProperties(prevFiltered => [...prevFiltered, response.data.data]);
+      }
+
       return response.data;
     } catch (error) {
       console.error('Error al crear propiedad:', error.response ? error.response.data : error.message);
@@ -81,9 +98,13 @@ export const PropertyProvider = ({ children }) => {
     }
   };
 
+  // Obtener una propiedad específica
   const getProperty = async (id) => {
     try {
       const response = await axios.get(`${API_URL}/property/properties/${id}`);
+      if (!response.data) {
+        throw new Error('No se encontraron datos de la propiedad');
+      }
       return response.data;
     } catch (error) {
       console.error('Error al obtener propiedad:', error);
@@ -91,9 +112,13 @@ export const PropertyProvider = ({ children }) => {
     }
   };
 
+  // Obtener códigos de propiedades
   const getPropertyCodes = async () => {
     try {
       const response = await axios.get(`${API_URL}/property/property-codes`);
+      if (!response.data || !response.data.data) {
+        throw new Error('No se pudieron obtener los códigos de propiedades');
+      }
       return response.data.data;
     } catch (error) {
       console.error('Error al obtener códigos de propiedades:', error);
@@ -101,66 +126,102 @@ export const PropertyProvider = ({ children }) => {
     }
   };
 
+  // Actualizar propiedad
   const updateProperty = async (id, propertyData) => {
     try {
-      const formData = new FormData();
-      
-      Object.keys(propertyData).forEach(key => {
-        if (key !== 'images') {
-          formData.append(key, propertyData[key]);
+      console.log("Datos recibidos para actualizar:", propertyData);
+
+      // Procesar los datos numéricos
+      const processedData = {
+        ...propertyData,
+        areaConstruida: Number(propertyData.areaConstruida) || 0,
+        areaTerreno: Number(propertyData.areaTerreno) || 0,
+        areaPrivada: Number(propertyData.areaPrivada) || 0,
+        alcobas: Number(propertyData.alcobas) || 0,
+        costo: Number(propertyData.costo) || 0,
+        banos: Number(propertyData.banos) || 0,
+        garaje: Number(propertyData.garaje) || 0,
+        estrato: Number(propertyData.estrato) || 0,
+        piso: Number(propertyData.piso) || 0,
+        valorAdministracion: Number(propertyData.valorAdministracion) || 0,
+        anioConstruccion: Number(propertyData.anioConstruccion) || 0
+      };
+
+      console.log("Datos procesados antes de enviar:", processedData);
+
+      const response = await axios.put(`${API_URL}/property/properties/${id}`, processedData, {
+        headers: {
+          'Content-Type': 'application/json'
         }
       });
 
-      if (propertyData.images && propertyData.images.length > 0) {
-        propertyData.images.forEach(image => {
-          formData.append('images', image);
-        });
+      // Verificar que la respuesta tenga los datos necesarios
+      if (!response.data || !response.data.data) {
+        console.error('Respuesta del servidor incompleta:', response);
+        throw new Error('La respuesta del servidor no contiene los datos esperados');
       }
 
-      const response = await axios.put(`${API_URL}/property/properties/${id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const updatedProperty = response.data.data;
 
-      setProperties(properties.map(p => p._id === id ? response.data.data : p));
-      setFilteredProperties(properties.map(p => p._id === id ? response.data.data : p));
+      // Actualizar el estado usando funciones de actualización
+      setProperties(prevProperties =>
+        prevProperties.map(p => p._id === updatedProperty._id ? updatedProperty : p)
+      );
+
+      setFilteredProperties(prevFiltered =>
+        prevFiltered.map(p => p._id === updatedProperty._id ? updatedProperty : p)
+      );
 
       return response.data;
     } catch (error) {
       console.error('Error al actualizar propiedad:', error);
+      console.error('Detalles del error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     }
   };
 
+  // Eliminar propiedad
   const deleteProperty = async (id) => {
     try {
       await axios.delete(`${API_URL}/property/properties/${id}`);
-      setProperties(properties.filter(p => p._id !== id));
-      setFilteredProperties(properties.filter(p => p._id !== id));
+
+      setProperties(prevProperties => prevProperties.filter(p => p._id !== id));
+      setFilteredProperties(prevFiltered => prevFiltered.filter(p => p._id !== id));
     } catch (error) {
       console.error('Error al eliminar propiedad:', error);
       throw error;
     }
   };
 
-  // Nueva función para alternar disponibilidad
- // PropertyContext.jsx
+  // Alternar disponibilidad de propiedad
+  const toggleAvailability = async (id, currentAvailability) => {
+    try {
+      const response = await axios.patch(`${API_URL}/property/properties/${id}/availability`, {
+        disponible: !currentAvailability,
+      });
 
-const toggleAvailability = async (id, currentAvailability) => {
-  try {
-    const response = await axios.patch(`${API_URL}/property/properties/${id}/availability`, {
-      disponible: !currentAvailability,
-    });
-    // Actualiza la lista de propiedades
-    setProperties(properties.map(p => p._id === id ? response.data.data : p));
-    setFilteredProperties(properties.map(p => p._id === id ? response.data.data : p));
-  } catch (error) {
-    console.error('Error al cambiar disponibilidad:', error);
-    throw error;
-  }
-};
+      if (response.data && response.data.data) {
+        const updatedProperty = response.data.data;
 
+        setProperties(prevProperties =>
+          prevProperties.map(p => p._id === id ? updatedProperty : p)
+        );
+
+        setFilteredProperties(prevFiltered =>
+          prevFiltered.map(p => p._id === id ? updatedProperty : p)
+        );
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Error al cambiar disponibilidad:', error);
+      throw error;
+    }
+  };
 
   return (
     <PropertyContext.Provider value={{
@@ -175,9 +236,11 @@ const toggleAvailability = async (id, currentAvailability) => {
       getProperty,
       updateProperty,
       deleteProperty,
-      toggleAvailability, // Asegúrate de exportar esta función
+      toggleAvailability
     }}>
       {children}
     </PropertyContext.Provider>
   );
 };
+
+export default PropertyProvider;
