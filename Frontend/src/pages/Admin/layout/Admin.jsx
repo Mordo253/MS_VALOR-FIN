@@ -5,7 +5,7 @@ import { Settings } from "../views/Settings/Settings";
 import { CarAU } from '../views/carAU/CarAU';
 import { PropertyAU } from '../views/propertyAU/PropertyAU';
 import { Adminnav } from '../components/Navbars/Adminnav';
-import { PropertyForm } from '../views/propertyAU/PropertyForm';
+import PropertyForm  from '../views/propertyAU/PropertyForm';
 import { Carform } from '../views/carAU/Carform';
 import { PropertyEditList } from '../views/propertyAU/PropertyEditList';
 import PropertyUP from '../views/propertyAU/Property/PropertyUP';

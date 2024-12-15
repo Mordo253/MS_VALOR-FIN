@@ -8,60 +8,132 @@ export const createProperty = async (req, res) => {
   session.startTransaction();
 
   try {
-    // Buscar la última propiedad creada para obtener el último código
-    const lastProperty = await Property.findOne().sort({ createdAt: -1 }).select('codigo').exec();
-    let newCode = 'MSV-00001'; // Valor por defecto si no hay propiedades previas
+    const {images} = req.body;
+    // Generar el código de la nueva propiedad
+    const lastProperty = await Property.findOne()
+      .sort({ createdAt: -1 })
+      .select("codigo")
+      .exec();
 
+    let newCode = "MSV-00001"; // Código inicial
     if (lastProperty?.codigo) {
-      const lastCodeNumber = parseInt(lastProperty.codigo.split('-')[1], 10);
-      newCode = `MSV-${String(lastCodeNumber + 1).padStart(5, '0')}`;
+      const lastCodeNumber = parseInt(lastProperty.codigo.split("-")[1], 10);
+      newCode = `MSV-${String(lastCodeNumber + 1).padStart(5, "0")}`;
     }
 
-    // Crear la nueva propiedad con el código generado
+    // Procesar características (esperadas como JSON en el cuerpo)
+    const caracteristicas = req.body.caracteristicas && Array.isArray(req.body.caracteristicas)
+      ? req.body.caracteristicas
+      : [];
+
+    // Separar características internas y externas
+    const caracteristicas_internas = caracteristicas
+      .filter((caract) => caract.type === "interna")
+      .map((caract) => ({ name: caract.name }));
+
+    const caracteristicas_externas = caracteristicas
+      .filter((caract) => caract.type === "externa")
+      .map((caract) => ({ name: caract.name }));
+
+    // Crear la nueva propiedad
     const newProperty = new Property({
       ...req.body,
-      codigo: newCode, // Agregar el código generado
-      caracteristicas_internas: req.body.caracteristicas_internas || [],
-      caracteristicas_externas: req.body.caracteristicas_externas || [],
+      codigo: newCode,
+      areaConstruida: Number(req.body.areaConstruida) || 0,
+      areaTerreno: Number(req.body.areaTerreno) || 0,
+      areaPrivada: Number(req.body.areaPrivada) || 0,
+      alcobas: Number(req.body.alcobas) || 0,
+      costo: Number(req.body.costo) || 0,
+      banos: Number(req.body.banos) || 0,
+      garaje: Number(req.body.garaje) || 0,
+      estrato: Number(req.body.estrato) || 0,
+      piso: Number(req.body.piso) || 0,
+      valorAdministracion: Number(req.body.valorAdministracion) || 0,
+      anioConstruccion: Number(req.body.anioConstruccion) || 0,
+      disponible: req.body.disponible === "true",
+      caracteristicas_internas,
+      caracteristicas_externas,
+      images: [], // Inicializamos imágenes como array vacío
     });
 
-    if (req.files?.images) {
-      const images = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
-      
-      for (const image of images) { 
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(image.mimetype)) {
-          throw new Error('Tipo de archivo no permitido');
+    // // Manejar nuevas imágenes (si las hay)
+    // if (req.files?.newImages) {
+    //   const images = Array.isArray(req.files.newImages)
+    //     ? req.files.newImages
+    //     : [req.files.newImages];
+
+    //   for (const image of images) {
+    //     if (!["image/jpeg", "image/png", "image/webp"].includes(image.mimetype)) {
+    //       throw new Error("Tipo de archivo no permitido");
+    //     }
+
+    //     const result = await uploadImage(image.tempFilePath, {
+    //       folder: "properties",
+    //       transformation: [{ width: 1000, height: 1000, crop: "limit" }],
+    //     });
+
+    //     newProperty.images.push({
+    //       public_id: result.public_id,
+    //       secure_url: result.secure_url,
+    //       width: result.width,
+    //       height: result.height,
+    //       format: result.format,
+    //       resource_type: result.resource_type,
+    //     });
+
+    //     await fs.unlink(image.tempFilePath); // Eliminar archivo temporal
+    //   }
+    // }
+
+    // Procesar nuevas imágenes
+    const processedImages = [];
+    for (const img of images) {
+      if (img.file) {
+        // Es una nueva imagen que necesita ser subida
+        try {
+          const result = await uploadImage(img.file);  // Subir imagen con el archivo
+          processedImages.push({
+            public_id: result.public_id,
+            secure_url: result.secure_url,
+            width: result.width,
+            height: result.height,
+            format: result.format,
+            resource_type: result.resource_type
+          });
+        } catch (error) {
+          console.error('Error al subir nueva imagen:', error);
         }
-
-        const result = await uploadImage(image.tempFilePath, {
-          folder: 'properties',
-          transformation: [{ width: 1000, height: 1000, crop: 'limit' }]
-        });
-
-        newProperty.images.push({
-          public_id: result.public_id,
-          secure_url: result.secure_url,
-          width: result.width,
-          height: result.height,
-          format: result.format,
-          resource_type: result.resource_type
-        });
-
-        await fs.unlink(image.tempFilePath);
+      } else {
+        // Es una imagen existente que se mantiene
+        processedImages.push(img);
       }
     }
 
+    // Actualizar el array de imágenes de la propiedad
+    newProperty.images = processedImages;
+
+    // Guardar la nueva propiedad
     const savedProperty = await newProperty.save({ session });
     await session.commitTransaction();
-    res.status(201).json({ success: true, data: savedProperty });
+
+    res.status(201).json({
+      success: true,
+      data: savedProperty,
+    });
+    
   } catch (error) {
     await session.abortTransaction();
-    console.error('Error en createProperty:', error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error en createProperty:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   } finally {
     session.endSession();
   }
 };
+
+
 
 export const getAllProperties = async (req, res) => {
   try {

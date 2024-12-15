@@ -2,28 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProperties } from '../../context/PropertyContex';
 import { Button } from "@material-tailwind/react";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Home,   
-  DollarSign, 
-  Ruler, 
-  Bath, 
-  Car, 
-  Building, 
-  ChevronLeft, 
-  ChevronRight, 
-  Star 
+import {
+  ArrowLeft,
+  MapPin,
+  Home,
+  DollarSign,
+  Ruler,
+  Bath,
+  Car,
+  Building,
+  ChevronLeft,
+  ChevronRight,
+  Star,
+  Share2,
+  Check
 } from 'lucide-react';
-import { 
-  FacebookShareButton, 
-  TwitterShareButton, 
-  WhatsappShareButton, 
+import {
+  FacebookShareButton,
+  TwitterShareButton,
+  WhatsappShareButton,
   EmailShareButton,
   FacebookIcon,
   TwitterIcon,
   WhatsappIcon,
-  EmailIcon 
+  EmailIcon
 } from 'react-share';
 
 const shouldHideValue = (value) => {
@@ -59,6 +61,52 @@ const ShareButton = ({ component: ShareButtonComponent, icon: IconComponent, col
     </div>
   </ShareButtonComponent>
 );
+
+const CustomShareButton = () => {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const currentUrl = window.location.href;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: document.title,
+          url: currentUrl
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(currentUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (error) {
+        console.error('Error copying to clipboard:', error);
+      }
+    }
+  };
+
+  return (
+    <button
+      onClick={handleShare}
+      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors w-full"
+    >
+      {copied ? (
+        <>
+          <Check className="w-5 h-5" />
+          <span>¡Copiado!</span>
+        </>
+      ) : (
+        <>
+          <Share2 className="w-5 h-5" />
+          <span>Compartir enlace</span>
+        </>
+      )}
+    </button>
+  );
+};
 
 const DetailItem = ({ label, value }) => {
   if (shouldHideValue(value)) return null;
@@ -121,17 +169,17 @@ export const PropertyDetails = () => {
   const handleTouchStart = () => {
     setShowArrows(true);
     if (arrowTimeout) clearTimeout(arrowTimeout);
-    
+
     const timeout = setTimeout(() => {
       setShowArrows(false);
     }, 3000);
-    
+
     setArrowTimeout(timeout);
   };
 
   const changeMainImage = (direction) => {
     if (!property?.images?.length) return;
-    
+
     setMainImageIndex(prev => {
       if (direction === 'left') {
         return prev === 0 ? property.images.length - 1 : prev - 1;
@@ -157,10 +205,10 @@ export const PropertyDetails = () => {
   const location = formatLocation(property.zona, property.ciudad, property.departamento);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-24 lg:pt-28 xl:pt-36 2xl:pt-40">
+    <div className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-16 lg:pt-28 xl:pt-8 2xl:pt-7">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Button 
-          onClick={() => navigate(-1)} 
+        <Button
+          onClick={() => navigate(-1)}
           className="mb-6 flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-700 shadow-sm"
         >
           <ArrowLeft size={16} />
@@ -170,18 +218,18 @@ export const PropertyDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Image Gallery Section */}
           <div className="lg:col-span-8 space-y-4">
-            <div 
+            <div
               className="relative aspect-video bg-gray-200 rounded-xl overflow-hidden"
               onTouchStart={handleTouchStart}
               onMouseEnter={() => setShowArrows(true)}
               onMouseLeave={() => setShowArrows(false)}
             >
-              <img 
+              <img
                 src={property.images[mainImageIndex]?.secure_url}
-                alt={property.title} 
+                alt={property.title}
                 className="w-full h-full object-cover"
               />
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   changeMainImage('left');
@@ -196,7 +244,7 @@ export const PropertyDetails = () => {
               >
                 <ChevronLeft size={24} />
               </button>
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   changeMainImage('right');
@@ -239,19 +287,19 @@ export const PropertyDetails = () => {
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h1 className="text-2xl font-bold mb-2">{property.title}</h1>
               <p className="text-lg font-semibold text-gray-600 mb-4">{property.codigo}</p>
-              
+
               {location && (
                 <div className="flex items-center gap-2 text-gray-600 mb-4">
                   <MapPin size={18} />
                   <span>{location}</span>
                 </div>
               )}
-              
+
               <div className="text-3xl font-bold mb-6 flex items-center text-blue-600">
                 <DollarSign size={28} />
                 <span>{property.costo.toLocaleString()}</span>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <PropertyDetail icon={<Home />} label="Habitaciones" value={property.alcobas} />
                 <PropertyDetail icon={<Bath />} label="Baños" value={property.banos} />
@@ -260,15 +308,15 @@ export const PropertyDetails = () => {
                 <PropertyDetail icon={<Car />} label="Garajes" value={property.garaje} />
                 <PropertyDetail icon={<Star />} label="Estrato" value={property.estrato} />
               </div>
-              
+
               <div className="space-y-3">
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 py-3">
                   Contactar al vendedor
                 </Button>
-                
-                <a 
-                  href={`https://wa.me/573160420188?text=Hola MS DE VALOR, estoy interesado en la propiedad ${property.code}`} 
-                  target="_blank" 
+
+                <a
+                  href={`https://wa.me/573160420188?text=Hola MS DE VALOR, estoy interesado en la propiedad ${property.codigo}`}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="block"
                 >
@@ -276,7 +324,9 @@ export const PropertyDetails = () => {
                     Contactar por WhatsApp
                   </Button>
                 </a>
-                
+
+                <CustomShareButton />
+
                 <div className="flex justify-center gap-4 pt-4">
                   <ShareButton component={FacebookShareButton} icon={FacebookIcon} color="#1877F2" />
                   <ShareButton component={TwitterShareButton} icon={TwitterIcon} color="#1DA1F2" />
@@ -303,10 +353,10 @@ export const PropertyDetails = () => {
               <DetailItem label="Tipo de inmueble" value={property.tipoInmueble} />
               <DetailItem label="Tipo de negocio" value={property.tipoNegocio} />
               <DetailItem label="Estado" value={property.estado} />
-              <DetailItem 
-                label="Administración" 
-                value={property.valorAdministracion && property.valorAdministracion > 0 ? 
-                  `$${property.valorAdministracion.toLocaleString()}` : null} 
+              <DetailItem
+                label="Administración"
+                value={property.valorAdministracion && property.valorAdministracion > 0 ?
+                  `$${property.valorAdministracion.toLocaleString()}` : null}
               />
               <DetailItem label="Año de construcción" value={property.anioConstruccion} />
               <DetailItem label="Piso" value={property.piso} />
@@ -327,7 +377,7 @@ export const PropertyDetails = () => {
                       .filter(caracteristica => !shouldHideValue(caracteristica))
                       .map((caracteristica, index) => (
                         <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                          <div className="w-2 h-2 rounded-full bg-blue-600"/>
+                          <div className="w-2 h-2 rounded-full bg-blue-600" />
                           <span className="text-gray-700">{caracteristica}</span>
                         </div>
                       ))}
@@ -338,11 +388,11 @@ export const PropertyDetails = () => {
                 <div>
                   <h3 className="font-semibold mb-4">Externas</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {caracteristicasExternas
+                    {caracteristicasExternas
                       .filter(caracteristica => !shouldHideValue(caracteristica))
                       .map((caracteristica, index) => (
                         <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                          <div className="w-2 h-2 rounded-full bg-blue-600"/>
+                          <div className="w-2 h-2 rounded-full bg-blue-600" />
                           <span className="text-gray-700">{caracteristica}</span>
                         </div>
                       ))}

@@ -20,7 +20,7 @@ router.get("/properties/:id", getPropertyById);
 // Ruta en el controlador de propiedades
 router.get('/property-codes', getPropertyCodes);
   
-router.post("/properties",fileUpload({ useTempFiles: true, tempFileDir: "./uploads" }), createProperty);
+router.post("/properties", auth,fileUpload({ useTempFiles: true, tempFileDir: "./uploads" }), createProperty);
 router.put("/properties/:id", auth, fileUpload({ useTempFiles: true, tempFileDir: "./uploads" }), updateProperty);
 router.patch('/properties/:id/availability', auth, updateAvailability);
 router.delete("/properties/:id", auth, deleteProperty);

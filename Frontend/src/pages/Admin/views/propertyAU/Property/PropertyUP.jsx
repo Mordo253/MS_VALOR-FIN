@@ -5,7 +5,7 @@ import { useAuth } from "../../../../../context/AuthContext";
 import PropertyImg from "./PropertyImg";
 import PropertyFormUP from "./PropertyFormUP";
 import Caracteristicas from "./PropertyCaract";
-
+ 
 const PropertyUP = () => {
   const { id } = useParams();
   const { isAuthenticated } = useAuth();

@@ -66,38 +66,64 @@ export const PropertyProvider = ({ children }) => {
     setFilteredProperties(filtered);
   }, [properties]);
 
-  // Crear nueva propiedad
   const createProperty = async (propertyData) => {
     try {
-      const formData = new FormData();
+      console.log("Datos que se envían al backend:", propertyData);
+  
+      // Procesar los datos numéricos
+      const processedData = {
+        ...propertyData,
+        areaConstruida: Number(propertyData.areaConstruida) || 0,
+        areaTerreno: Number(propertyData.areaTerreno) || 0,
+        areaPrivada: Number(propertyData.areaPrivada) || 0,
+        alcobas: Number(propertyData.alcobas) || 0,
+        costo: Number(propertyData.costo) || 0,
+        banos: Number(propertyData.banos) || 0,
+        garaje: Number(propertyData.garaje) || 0,
+        estrato: Number(propertyData.estrato) || 0,
+        piso: Number(propertyData.piso) || 0,
+        valorAdministracion: Number(propertyData.valorAdministracion) || 0,
+        anioConstruccion: Number(propertyData.anioConstruccion) || 0
+      };
 
-      // Agregar campos básicos
-      Object.keys(propertyData).forEach(key => {
-        if (key === 'caracteristicas' || key === 'images') {
-          formData.append(key, JSON.stringify(propertyData[key]));
-        } else {
-          formData.append(key, propertyData[key]);
-        }
-      });
-
-      const response = await axios.post(`${API_URL}/property/properties`, formData, {
+  
+      console.log("Datos procesados antes de enviar:", processedData);
+  
+      // Enviar los datos al backend como JSON
+      const response = await axios.post(`${API_URL}/property/properties`, processedData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "application/json",
         },
       });
-
-      if (response.data && response.data.data) {
-        setProperties(prevProperties => [...prevProperties, response.data.data]);
-        setFilteredProperties(prevFiltered => [...prevFiltered, response.data.data]);
+  
+      // Validar la respuesta del backend
+      if (!response.data || !response.data.data) {
+        console.error("Respuesta del servidor incompleta:", response);
+        throw new Error("La respuesta del servidor no contiene los datos esperados");
       }
-
-      return response.data;
+  
+      const newProperty = response.data.data;
+  
+      // Actualizar el estado del contexto
+      setProperties((prev) => [...prev, newProperty]);
+      setFilteredProperties((prev) => [...prev, newProperty]);
+  
+      console.log("Propiedad creada con éxito:", newProperty);
+  
+      return { success: true, data: newProperty };
     } catch (error) {
-      console.error('Error al crear propiedad:', error.response ? error.response.data : error.message);
-      throw error;
+      // Manejo detallado de errores
+      console.error("Error al crear propiedad:", error.response || error.message);
+  
+      const errorMessage = error.response?.data?.message || "Error al comunicarse con el servidor";
+  
+      return { success: false, error: errorMessage };
     }
   };
 
+  
+  
+  
   // Obtener una propiedad específica
   const getProperty = async (id) => {
     try {
