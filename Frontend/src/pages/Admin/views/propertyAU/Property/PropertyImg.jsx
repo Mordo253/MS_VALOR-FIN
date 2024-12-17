@@ -1,14 +1,26 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 
 const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => {
-  const [images, setImages] = useState(initialImages); // Imágenes actuales
-  const [imagesToDelete, setImagesToDelete] = useState([]); // Imágenes a eliminar
-  const [newImages, setNewImages] = useState([]); // Nuevas imágenes
-  const [mainImageIndex, setMainImageIndex] = useState(0); // Índice de imagen principal
-  const [error, setError] = useState(null); // Manejo de errores
+  const [images, setImages] = useState([]);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [newImages, setNewImages] = useState([]);
+  const [mainImageIndex, setMainImageIndex] = useState(0);
+  const [error, setError] = useState(null);
+
+  // Validación de imágenes
+  const validateImage = useCallback((file) => {
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      return 'Tipo de archivo no válido. Solo se permiten JPG, PNG y WEBP';
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return 'La imagen no debe superar los 5MB';
+    }
+    return null;
+  }, []);
 
   // Función para cargar nuevas imágenes
-  const handleImageUpload = (e) => {
+  const handleImageUpload = useCallback((e) => {
     const files = Array.from(e.target.files);
 
     if (images.length + files.length > imageLimit) {
@@ -16,17 +28,12 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
       return;
     }
 
-    const invalidFiles = files.filter((file) => !file.type.startsWith("image/"));
-    if (invalidFiles.length > 0) {
-      setError("Solo se permiten archivos de imagen");
-      return;
-    }
-
-    const maxSize = 5 * 1024 * 1024;
-    const oversizedFiles = files.filter((file) => file.size > maxSize);
-    if (oversizedFiles.length > 0) {
-      setError("Algunas imágenes son demasiado grandes. Máximo 5MB por imagen");
-      return;
+    for (const file of files) {
+      const validationError = validateImage(file);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
     }
 
     files.forEach((file) => {
@@ -37,13 +44,14 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
           setImages((prev) => [
             ...prev,
             {
-              public_id: URL.createObjectURL(file),
-              secure_url: URL.createObjectURL(file),
-              file,
+              public_id: `temp_${Date.now()}_${file.name}`,
+              secure_url: reader.result,
+              file: reader.result,
               width: image.width,
               height: image.height,
               format: file.type.split("/")[1],
               resource_type: "image",
+              isNew: true
             },
           ]);
         };
@@ -54,31 +62,26 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
 
     setNewImages((prev) => [...prev, ...files]);
     setError(null);
-  };
+  }, [images.length, imageLimit, validateImage]);
 
   // Función para eliminar una imagen
-  const handleImageDelete = useCallback(
-    (publicId) => {
-      setImages((prev) => {
-        const updatedImages = prev.filter((img) => img.public_id !== publicId);
-        if (publicId.startsWith("blob:")) {
-          URL.revokeObjectURL(publicId);
-        } else {
-          setImagesToDelete((prevToDelete) => [...prevToDelete, publicId]);
-        }
-        return updatedImages;
-      });
-
-      setNewImages((prev) =>
-        prev.filter((file) => URL.createObjectURL(file) !== publicId)
-      );
-
-      if (mainImageIndex >= images.length - 1) {
-        setMainImageIndex(0);
+  const handleImageDelete = useCallback((publicId) => {
+    setImages((prev) => {
+      const updatedImages = prev.filter((img) => img.public_id !== publicId);
+      if (!publicId.startsWith('temp_')) {
+        setImagesToDelete((prevToDelete) => [...prevToDelete, publicId]);
       }
-    },
-    [mainImageIndex, images.length]
-  );
+      return updatedImages;
+    });
+
+    setNewImages((prev) =>
+      prev.filter((file) => `temp_${Date.now()}_${file.name}` !== publicId)
+    );
+
+    setMainImageIndex((prevIndex) => 
+      prevIndex >= images.length - 1 ? 0 : prevIndex
+    );
+  }, [images.length]);
 
   // Función para establecer la imagen principal
   const handleSetMainImage = useCallback((index) => {
@@ -91,30 +94,52 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
     setMainImageIndex(0);
   }, []);
 
-  // Datos formateados para enviar al componente padre
-  const formattedImages = useMemo(
-    () =>
-      images.map((img) => ({
-        public_id: img.public_id,
+  // Inicializar imágenes existentes
+  useEffect(() => {
+    if (initialImages?.length > 0 && images.length === 0) {
+      const processedImages = initialImages.map(img => ({
+        ...img,
+        public_id: img.public_id || `existing_${Date.now()}`,
         secure_url: img.secure_url,
-        resource_type: img.resource_type,
-      })),
+        resource_type: 'image',
+        isNew: false
+      }));
+      setImages(processedImages);
+    }
+  }, [initialImages]);
+
+  // Datos formateados para enviar al componente padre
+  const formattedImages = useMemo(() =>
+    images.map((img) => ({
+      public_id: img.public_id,
+      secure_url: img.secure_url,
+      file: img.isNew ? img.file : null,
+      resource_type: img.resource_type,
+    })),
     [images]
   );
 
   // Enviar cambios al componente padre
   useEffect(() => {
-    if (typeof onImageUpdate === "function") {
-      onImageUpdate({ images: formattedImages, imagesToDelete, newImages });
+    const shouldUpdate = 
+      images.length > 0 || 
+      imagesToDelete.length > 0 || 
+      newImages.length > 0;
+
+    if (typeof onImageUpdate === "function" && shouldUpdate) {
+      const updateData = {
+        images: formattedImages,
+        imagesToDelete,
+        newImages
+      };
+      onImageUpdate(updateData);
     }
-  }, [formattedImages, imagesToDelete, newImages, onImageUpdate]);
+  }, [formattedImages, imagesToDelete, newImages]);
 
   return (
     <div>
-      {/* Manejo de errores */}
       {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
 
-      {/* Galería de imágenes */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium text-gray-900">Imágenes</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -162,7 +187,6 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
         </div>
       </div>
 
-      {/* Input para nuevas imágenes */}
       <div className="mt-4">
         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -190,7 +214,7 @@ const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => 
             type="file"
             className="hidden"
             multiple
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             onChange={handleImageUpload}
           />
         </label>

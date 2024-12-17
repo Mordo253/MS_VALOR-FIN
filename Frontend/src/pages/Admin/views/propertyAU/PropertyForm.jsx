@@ -47,7 +47,7 @@ const PropertyForm = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+ 
   const handleFormDataChange = useCallback((newData) => {
     setFormData((prevData) => ({
       ...prevData,
@@ -105,17 +105,67 @@ const PropertyForm = () => {
           })),
         ],
 
-        images: images,
-        imagesToDelete: imagesToDelete
+        // Manejo actualizado de imágenes
+        images: images.map(img => {
+          // Para imágenes nuevas (con datos base64)
+          if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
+            return {
+              public_id: img.public_id,
+              secure_url: img.secure_url,
+              file: img.file,
+              resource_type: 'image'
+            };
+          }
+          // Para imágenes existentes
+          return {
+            public_id: img.public_id,
+            secure_url: img.secure_url,
+            resource_type: img.resource_type
+          };
+        }),
+        
+        // IDs de imágenes a eliminar
+        imagesToDelete: imagesToDelete.filter(id => !id.startsWith('temp_')),
+        
+        // Flags adicionales
+        disponible: Boolean(formData.disponible),
+        updatedAt: new Date().toISOString()
       };
+  
+      // Validación de imágenes
+      if (dataToSend.images.length === 0) {
+        throw new Error("Debe incluir al menos una imagen");
+      }
+  
+      // Validar tamaño máximo de imágenes base64
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      const oversizedImages = dataToSend.images.filter(img => 
+        img.file && img.file.length * 0.75 > maxSize
+      );
+  
+      if (oversizedImages.length > 0) {
+        throw new Error("Una o más imágenes exceden el tamaño máximo permitido (5MB)");
+      }
+  
+      // Llamada al servidor con manejo de timeout
+      const timeoutDuration = 30000; // 30 segundos
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Tiempo de espera agotado")), timeoutDuration)
+      );
+  
       
       // Debug: Log de los datos que se envían
       console.log("Datos procesados para enviar:", dataToSend);
 
-      const response = await createProperty(dataToSend);
+      const responsePromise = createProperty(dataToSend);
+      const response = await Promise.race([responsePromise, timeoutPromise]);
 
       if (response && response.data) {
         setSuccess(true);
+        // Limpiar estados
+        setImages([]);
+        setImagesToDelete([]);
+        setError(null);
         setTimeout(() => {
           navigate("/properties");
         }, 1500);

@@ -8,7 +8,22 @@ export const createProperty = async (req, res) => {
   session.startTransaction();
 
   try {
-    const {images} = req.body;
+    const { images, caracteristicas, ...propertyData } = req.body;
+
+    // Validaciones iniciales
+    if (!propertyData.title || !propertyData.ciudad || !propertyData.costo) {
+      throw new Error("Campos requeridos: título, ciudad y costo son obligatorios");
+    }
+
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      throw new Error("Debe incluir al menos una imagen");
+    }
+
+    // Validar características
+    if (!caracteristicas || !Array.isArray(caracteristicas)) {
+      throw new Error("Las características deben ser un array válido");
+    }
+
     // Generar el código de la nueva propiedad
     const lastProperty = await Property.findOne()
       .sort({ createdAt: -1 })
@@ -21,119 +36,122 @@ export const createProperty = async (req, res) => {
       newCode = `MSV-${String(lastCodeNumber + 1).padStart(5, "0")}`;
     }
 
-    // Procesar características (esperadas como JSON en el cuerpo)
-    const caracteristicas = req.body.caracteristicas && Array.isArray(req.body.caracteristicas)
-      ? req.body.caracteristicas
-      : [];
-
-    // Separar características internas y externas
-    const caracteristicas_internas = caracteristicas
-      .filter((caract) => caract.type === "interna")
-      .map((caract) => ({ name: caract.name }));
-
-    const caracteristicas_externas = caracteristicas
-      .filter((caract) => caract.type === "externa")
-      .map((caract) => ({ name: caract.name }));
-
-    // Crear la nueva propiedad
-    const newProperty = new Property({
-      ...req.body,
-      codigo: newCode,
-      areaConstruida: Number(req.body.areaConstruida) || 0,
-      areaTerreno: Number(req.body.areaTerreno) || 0,
-      areaPrivada: Number(req.body.areaPrivada) || 0,
-      alcobas: Number(req.body.alcobas) || 0,
-      costo: Number(req.body.costo) || 0,
-      banos: Number(req.body.banos) || 0,
-      garaje: Number(req.body.garaje) || 0,
-      estrato: Number(req.body.estrato) || 0,
-      piso: Number(req.body.piso) || 0,
-      valorAdministracion: Number(req.body.valorAdministracion) || 0,
-      anioConstruccion: Number(req.body.anioConstruccion) || 0,
-      disponible: req.body.disponible === "true",
-      caracteristicas_internas,
-      caracteristicas_externas,
-      images: [], // Inicializamos imágenes como array vacío
-    });
-
-    // // Manejar nuevas imágenes (si las hay)
-    // if (req.files?.newImages) {
-    //   const images = Array.isArray(req.files.newImages)
-    //     ? req.files.newImages
-    //     : [req.files.newImages];
-
-    //   for (const image of images) {
-    //     if (!["image/jpeg", "image/png", "image/webp"].includes(image.mimetype)) {
-    //       throw new Error("Tipo de archivo no permitido");
-    //     }
-
-    //     const result = await uploadImage(image.tempFilePath, {
-    //       folder: "properties",
-    //       transformation: [{ width: 1000, height: 1000, crop: "limit" }],
-    //     });
-
-    //     newProperty.images.push({
-    //       public_id: result.public_id,
-    //       secure_url: result.secure_url,
-    //       width: result.width,
-    //       height: result.height,
-    //       format: result.format,
-    //       resource_type: result.resource_type,
-    //     });
-
-    //     await fs.unlink(image.tempFilePath); // Eliminar archivo temporal
-    //   }
-    // }
-
-    // Procesar nuevas imágenes
+    // Procesamiento de imágenes
     const processedImages = [];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
     for (const img of images) {
-      if (img.file) {
-        // Es una nueva imagen que necesita ser subida
-        try {
-          const result = await uploadImage(img.file);  // Subir imagen con el archivo
+      try {
+        if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
+          // Validar tamaño de imagen
+          const approximateSize = img.file.length * 0.75;
+          if (approximateSize > maxSize) {
+            throw new Error(`Imagen ${img.public_id || 'nueva'} excede el tamaño máximo de 5MB`);
+          }
+
+          // Subir nueva imagen
+          const result = await uploadImage(img.file);
+          if (result) {
+            processedImages.push({
+              public_id: result.public_id,
+              secure_url: result.secure_url,
+              width: result.width || 0,
+              height: result.height || 0,
+              format: result.format,
+              resource_type: result.resource_type
+            });
+          }
+        } else if (img.secure_url && !img.secure_url.startsWith('blob:')) {
+          // Mantener imagen existente
           processedImages.push({
-            public_id: result.public_id,
-            secure_url: result.secure_url,
-            width: result.width,
-            height: result.height,
-            format: result.format,
-            resource_type: result.resource_type
+            public_id: img.public_id,
+            secure_url: img.secure_url,
+            width: img.width || 0,
+            height: img.height || 0,
+            format: img.format,
+            resource_type: img.resource_type
           });
-        } catch (error) {
-          console.error('Error al subir nueva imagen:', error);
         }
-      } else {
-        // Es una imagen existente que se mantiene
-        processedImages.push(img);
+      } catch (error) {
+        console.error('Error procesando imagen:', error);
+        throw new Error(`Error al procesar imagen: ${error.message}`);
       }
     }
 
-    // Actualizar el array de imágenes de la propiedad
-    newProperty.images = processedImages;
+    if (processedImages.length === 0) {
+      throw new Error("No se pudo procesar ninguna imagen correctamente");
+    }
 
-    // Guardar la nueva propiedad
+    // Crear la nueva propiedad
+    const newProperty = new Property({
+      ...propertyData,
+      codigo: newCode,
+      // Convertir campos numéricos
+      areaConstruida: Number(propertyData.areaConstruida) || 0,
+      areaTerreno: Number(propertyData.areaTerreno) || 0,
+      areaPrivada: Number(propertyData.areaPrivada) || 0,
+      alcobas: Number(propertyData.alcobas) || 0,
+      costo: Number(propertyData.costo) || 0,
+      banos: Number(propertyData.banos) || 0,
+      garaje: Number(propertyData.garaje) || 0,
+      estrato: Number(propertyData.estrato) || 0,
+      piso: Number(propertyData.piso) || 0,
+      valorAdministracion: Number(propertyData.valorAdministracion) || 0,
+      anioConstruccion: Number(propertyData.anioConstruccion) || 0,
+      // Otros campos
+      disponible: Boolean(propertyData.disponible),
+      caracteristicas: caracteristicas.map(caract => ({
+        name: caract.name,
+        type: caract.type
+      })),
+      images: processedImages,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    // Guardar la propiedad
     const savedProperty = await newProperty.save({ session });
     await session.commitTransaction();
 
+    // Log de éxito
+    console.log('Propiedad creada exitosamente:', {
+      id: savedProperty._id,
+      codigo: savedProperty.codigo,
+      caracteristicas: savedProperty.caracteristicas.length,
+      imagenes: savedProperty.images.length
+    });
+
+    // Enviar respuesta exitosa
     res.status(201).json({
       success: true,
+      message: "Propiedad creada exitosamente",
       data: savedProperty,
     });
-    
+
   } catch (error) {
     await session.abortTransaction();
-    console.error("Error en createProperty:", error);
-    res.status(500).json({
+    console.error("Error en createProperty:", {
+      message: error.message,
+      stack: error.stack
+    });
+
+    // Determinar el código de estado HTTP apropiado
+    const statusCode = error.message.includes("requeridos") || 
+                      error.message.includes("características") ? 400 : 500;
+
+    res.status(statusCode).json({
       success: false,
       message: error.message,
+      error: {
+        type: error.name,
+        details: error.message,
+        path: error.path
+      }
     });
   } finally {
     session.endSession();
   }
 };
-
-
 
 export const getAllProperties = async (req, res) => {
   try {
@@ -169,7 +187,8 @@ export const updateProperty = async (req, res) => {
     const {
       title, pais, departamento, ciudad, zona, areaConstruida, areaTerreno, areaPrivada,
       alcobas, costo, banos, garaje, estrato, piso, tipoInmueble, tipoNegocio, estado,
-      valorAdministracion, anioConstruccion, caracteristicas, description, images
+      valorAdministracion, anioConstruccion, caracteristicas, description, images,
+      imagesToDelete
     } = req.body;
 
     // Buscar la propiedad existente
@@ -178,93 +197,112 @@ export const updateProperty = async (req, res) => {
       return res.status(404).json({ message: "Propiedad no encontrada" });
     }
 
-    // Actualizar campos básicos de la propiedad usando el operador nullish (??) 
-    // para mantener el valor existente si el nuevo es null o undefined
+    // Validar que haya al menos una imagen
+    if (!images || images.length === 0) {
+      return res.status(400).json({ message: "Debe incluir al menos una imagen" });
+    }
+
+    // Actualizar campos básicos de la propiedad
     property.title = title ?? property.title;
     property.pais = pais ?? property.pais;
     property.departamento = departamento ?? property.departamento;
     property.ciudad = ciudad ?? property.ciudad;
     property.zona = zona ?? property.zona;
-    property.areaConstruida = areaConstruida ?? property.areaConstruida;
-    property.areaTerreno = areaTerreno ?? property.areaTerreno;
-    property.areaPrivada = areaPrivada ?? property.areaPrivada;
-    property.alcobas = alcobas ?? property.alcobas;
-    property.costo = costo ?? property.costo;
-    property.banos = banos ?? property.banos;
-    property.garaje = garaje ?? property.garaje;
-    property.estrato = estrato ?? property.estrato;
-    property.piso = piso ?? property.piso;
+    property.areaConstruida = Number(areaConstruida) || property.areaConstruida;
+    property.areaTerreno = Number(areaTerreno) || property.areaTerreno;
+    property.areaPrivada = Number(areaPrivada) || property.areaPrivada;
+    property.alcobas = Number(alcobas) || property.alcobas;
+    property.costo = Number(costo) || property.costo;
+    property.banos = Number(banos) || property.banos;
+    property.garaje = Number(garaje) || property.garaje;
+    property.estrato = Number(estrato) || property.estrato;
+    property.piso = Number(piso) || property.piso;
     property.tipoInmueble = tipoInmueble ?? property.tipoInmueble;
     property.tipoNegocio = tipoNegocio ?? property.tipoNegocio;
     property.estado = estado ?? property.estado;
-    property.valorAdministracion = valorAdministracion ?? property.valorAdministracion;
-    property.anioConstruccion = anioConstruccion ?? property.anioConstruccion;
+    property.valorAdministracion = Number(valorAdministracion) || property.valorAdministracion;
+    property.anioConstruccion = Number(anioConstruccion) || property.anioConstruccion;
     property.description = description ?? property.description;
 
-    // Actualizar características si se proporcionan
+    // Actualizar características
     if (caracteristicas && Array.isArray(caracteristicas)) {
       property.caracteristicas = caracteristicas;
     }
 
-    // Manejar actualización de imágenes
-    if (images && Array.isArray(images)) {
-      // Obtener IDs de imágenes actuales
-      const currentImageIds = property.images.map(img => img.public_id);
-      // Obtener IDs de imágenes nuevas
-      const newImageIds = images.map(img => img.public_id);
-
-      // Encontrar imágenes a eliminar (están en current pero no en new)
-      const imagesToDelete = currentImageIds.filter(id => !newImageIds.includes(id));
-
-      // Eliminar imágenes de Cloudinary
+    // Manejar eliminación de imágenes
+    if (imagesToDelete && Array.isArray(imagesToDelete)) {
       for (const publicId of imagesToDelete) {
-        if (!publicId.startsWith('blob:')) {
+        if (publicId && !publicId.startsWith('temp_')) {
           try {
-            await deleteImage(publicId); // Función para eliminar imagen de Cloudinary
+            await deleteImage(publicId);
+            console.log(`Imagen eliminada exitosamente: ${publicId}`);
           } catch (error) {
             console.error(`Error al eliminar imagen ${publicId}:`, error);
           }
         }
       }
-
-      // Procesar nuevas imágenes
-      const processedImages = [];
-      for (const img of images) {
-        if (img.file) {
-          // Es una nueva imagen que necesita ser subida
-          try {
-            const result = await uploadImage(img.file);  // Subir imagen con el archivo
-            processedImages.push({
-              public_id: result.public_id,
-              secure_url: result.secure_url,
-              width: result.width,
-              height: result.height,
-              format: result.format,
-              resource_type: result.resource_type
-            });
-          } catch (error) {
-            console.error('Error al subir nueva imagen:', error);
-          }
-        } else {
-          // Es una imagen existente que se mantiene
-          processedImages.push(img);
-        }
-      }
-
-      // Actualizar el array de imágenes de la propiedad
-      property.images = processedImages;
     }
 
+    // Procesar imágenes
+    const processedImages = [];
+    if (images && Array.isArray(images)) {
+      for (const img of images) {
+        try {
+          if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
+            // Es una nueva imagen en base64
+            const result = await uploadImage(img.file);
+            if (result) {
+              processedImages.push({
+                public_id: result.public_id,
+                secure_url: result.secure_url,
+                width: result.width,
+                height: result.height,
+                format: result.format,
+                resource_type: result.resource_type
+              });
+            }
+          } else if (img.secure_url && !img.secure_url.startsWith('blob:')) {
+            // Es una imagen existente válida
+            processedImages.push({
+              public_id: img.public_id,
+              secure_url: img.secure_url,
+              width: img.width || 0,
+              height: img.height || 0,
+              format: img.format,
+              resource_type: img.resource_type
+            });
+          }
+        } catch (error) {
+          console.error('Error procesando imagen:', error);
+        }
+      }
+    }
+
+    // Validar que haya imágenes después del procesamiento
+    if (processedImages.length === 0) {
+      return res.status(400).json({ message: "No se pudo procesar ninguna imagen correctamente" });
+    }
+
+    // Actualizar el array de imágenes de la propiedad
+    property.images = processedImages;
+
+    // Actualizar fecha de modificación
+    property.updatedAt = new Date();
+
     // Guardar los cambios
-    await property.save();
+    const updatedProperty = await property.save();
 
-    // Enviar respuesta exitosa con el objeto envuelto en 'data'
-    res.status(200).json({ data: property });
-
+    // Enviar respuesta exitosa
+    res.status(200).json({ 
+      success: true,
+      message: "Propiedad actualizada exitosamente",
+      data: updatedProperty 
+    });
 
   } catch (error) {
     console.error("Error al actualizar la propiedad:", error);
     res.status(500).json({ 
+      success: false,
       message: "Error al actualizar la propiedad",
       error: error.message 
     });

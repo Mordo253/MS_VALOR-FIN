@@ -205,21 +205,13 @@ export const PropertyDetails = () => {
   const location = formatLocation(property.zona, property.ciudad, property.departamento);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-16 lg:pt-28 xl:pt-8 2xl:pt-7">
+    <div className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-16 lg:pt-12 xl:pt-16 2xl:pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Button
-          onClick={() => navigate(-1)}
-          className="mb-6 flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-700 shadow-sm"
-        >
-          <ArrowLeft size={16} />
-          Volver
-        </Button>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Image Gallery Section */}
           <div className="lg:col-span-8 space-y-4">
             <div
-              className="relative aspect-video bg-gray-200 rounded-xl overflow-hidden"
+              className="relative h-[600px] bg-gray-200 rounded-xl overflow-hidden"
               onTouchStart={handleTouchStart}
               onMouseEnter={() => setShowArrows(true)}
               onMouseLeave={() => setShowArrows(false)}
@@ -285,6 +277,15 @@ export const PropertyDetails = () => {
           {/* Property Info Section */}
           <div className="lg:col-span-4 space-y-6">
             <div className="bg-white rounded-xl p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <ArrowLeft size={20} />
+                  <span className="font-medium">Volver</span>
+                </button>
+              </div>
               <h1 className="text-2xl font-bold mb-2">{property.title}</h1>
               <p className="text-lg font-semibold text-gray-600 mb-4">{property.codigo}</p>
 

@@ -123,21 +123,24 @@ const PropertyUP = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
+      // Validaciones iniciales
       if (!formData.title || !formData.ciudad || !formData.costo) {
         throw new Error("Por favor complete todos los campos requeridos");
       }
-
+  
       if (!selectedCaracteristicas.internas.length && !selectedCaracteristicas.externas.length) {
         throw new Error("Debe seleccionar al menos una característica");
       }
-
+  
       setIsSubmitting(true);
       setError(null);
-
+  
+      // Preparar datos para enviar
       const dataToSend = {
         ...formData,
+        // Conversión de valores numéricos
         areaConstruida: Number(formData.areaConstruida) || 0,
         areaTerreno: Number(formData.areaTerreno) || 0,
         areaPrivada: Number(formData.areaPrivada) || 0,
@@ -149,40 +152,102 @@ const PropertyUP = () => {
         piso: Number(formData.piso) || 0,
         valorAdministracion: Number(formData.valorAdministracion) || 0,
         anioConstruccion: Number(formData.anioConstruccion) || 0,
-
+  
+        // Preparar características
         caracteristicas: [
-          ...selectedCaracteristicas.internas.map(name => ({
+          ...selectedCaracteristicas.internas.map((name) => ({
             name,
             type: "interna",
           })),
-          ...selectedCaracteristicas.externas.map(name => ({
+          ...selectedCaracteristicas.externas.map((name) => ({
             name,
             type: "externa",
           })),
         ],
-
-        images: images,
-        imagesToDelete: imagesToDelete
+  
+        // Manejo actualizado de imágenes
+        images: images.map(img => {
+          // Para imágenes nuevas (con datos base64)
+          if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
+            return {
+              public_id: img.public_id,
+              secure_url: img.secure_url,
+              file: img.file,
+              resource_type: 'image'
+            };
+          }
+          // Para imágenes existentes
+          return {
+            public_id: img.public_id,
+            secure_url: img.secure_url,
+            resource_type: img.resource_type
+          };
+        }),
+        
+        // IDs de imágenes a eliminar
+        imagesToDelete: imagesToDelete.filter(id => !id.startsWith('temp_')),
+        
+        // Flags adicionales
+        disponible: Boolean(formData.disponible),
+        updatedAt: new Date().toISOString()
       };
-
-      const response = await updateProperty(id, dataToSend);
-
+  
+      // Validación de imágenes
+      if (dataToSend.images.length === 0) {
+        throw new Error("Debe incluir al menos una imagen");
+      }
+  
+      // Validar tamaño máximo de imágenes base64
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      const oversizedImages = dataToSend.images.filter(img => 
+        img.file && img.file.length * 0.75 > maxSize
+      );
+  
+      if (oversizedImages.length > 0) {
+        throw new Error("Una o más imágenes exceden el tamaño máximo permitido (5MB)");
+      }
+  
+      // Llamada al servidor con manejo de timeout
+      const timeoutDuration = 30000; // 30 segundos
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Tiempo de espera agotado")), timeoutDuration)
+      );
+  
+      const responsePromise = updateProperty(id, dataToSend);
+      const response = await Promise.race([responsePromise, timeoutPromise]);
+  
       if (response && response.data) {
         setSuccess(true);
+        // Limpiar estados
+        setImages([]);
+        setImagesToDelete([]);
+        setError(null);
+        
+        // Redireccionar después de un breve delay
         setTimeout(() => {
           navigate("/properties");
         }, 1500);
       } else {
         throw new Error("No se recibió respuesta del servidor");
       }
-
+  
     } catch (err) {
+      console.error("Error detallado:", err);
       setError(err.message || "Error al actualizar la propiedad");
       setSuccess(false);
+      
+      // Mostrar error en la UI
+      if (err.response?.data?.message) {
+        setError(`Error del servidor: ${err.response.data.message}`);
+      } else {
+        setError(err.message || "Error al actualizar la propiedad");
+      }
+  
     } finally {
       setIsSubmitting(false);
     }
   };
+  
 
   if (loading) {
     return (
