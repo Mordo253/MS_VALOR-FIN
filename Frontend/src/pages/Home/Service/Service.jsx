@@ -52,7 +52,7 @@ export const Service = () => {
     slidesPerView: 1,
     effect: "fade",
     autoplay: {
-      delay: 10000,
+      delay: 6000,
       disableOnInteraction: false,
       pauseOnMouseEnter: true
     },
