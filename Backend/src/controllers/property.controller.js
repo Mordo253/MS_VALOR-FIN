@@ -309,7 +309,6 @@ export const updateProperty = async (req, res) => {
   }
 };
 
-
 // Otras funciones permanecen igual...
 
 export const deleteProperty = async (req, res) => {

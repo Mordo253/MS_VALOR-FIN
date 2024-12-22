@@ -10,7 +10,7 @@ import {
   Ruler,
   Bath,
   Car,
-  Building,
+  Building, 
   ChevronLeft,
   ChevronRight,
   Star,

@@ -6,9 +6,11 @@ import { CarAU } from '../views/carAU/CarAU';
 import { PropertyAU } from '../views/propertyAU/PropertyAU';
 import { Adminnav } from '../components/Navbars/Adminnav';
 import PropertyForm  from '../views/propertyAU/PropertyForm';
-import { Carform } from '../views/carAU/Carform';
 import { PropertyEditList } from '../views/propertyAU/PropertyEditList';
 import PropertyUP from '../views/propertyAU/Property/PropertyUP';
+import CarSent from "../views/carAU/CarSent";
+import { CarEditList } from "../views/carAU/CarEditList";
+import CarUP from "../views/carAU/CarUP";
 
 export const Admin = () => {
   return (
@@ -21,8 +23,9 @@ export const Admin = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/car" element={<CarAU />} />
-            <Route path="/car/car-new" element={<Carform />} />
-            <Route path="/car/car-update" element={<Carform />} />
+            <Route path="/car/car-new" element={<CarSent />} />
+            <Route path="/car/car-update/:id" element={<CarUP/>} />
+            <Route path="/car/car-list" element={<CarEditList />} />
             <Route path="/property" element={<PropertyAU />} />
             <Route path="/property/property-new" element={<PropertyForm />} />
             <Route path="/property/property-update/:id" element={<PropertyUP/>} />

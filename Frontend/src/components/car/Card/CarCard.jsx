@@ -9,8 +9,10 @@ export const CarCarousel = ({ onViewAll }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   
   const latestVehicles = vehicles
+    .filter(vehicle => vehicle.disponible)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 9);
+
 
   const totalSlides = Math.ceil(latestVehicles.length / 3);
 

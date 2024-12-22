@@ -11,7 +11,7 @@ export const PropertyCarousel = ({ onViewAll }) => {
   const autoPlayRef = useRef(null);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
-  // Update slides per view based on screen size
+  // Actualiza la cantidad de slides por vista según el tamaño de la pantalla
   useEffect(() => {
     const updateLayout = () => {
       const width = window.innerWidth;
@@ -30,7 +30,9 @@ export const PropertyCarousel = ({ onViewAll }) => {
     return () => window.removeEventListener('resize', updateLayout);
   }, []);
 
+  // Filtramos solo las propiedades disponibles
   const latestProperties = properties
+    .filter(property => property.disponible)  // Filtramos solo las propiedades disponibles
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 9);
 
@@ -168,6 +170,7 @@ export const PropertyCarousel = ({ onViewAll }) => {
   );
 };
 
+// Componente PropertyCard
 const PropertyCard = ({ property, isDesktop }) => {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);

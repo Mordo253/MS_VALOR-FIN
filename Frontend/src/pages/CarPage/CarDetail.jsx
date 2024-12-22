@@ -1,209 +1,310 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useVehicles } from '../../context/CarContext';
+import { useVehicles } from '../../context/CarContext';  // Assuming you have a CarContext similar to carContext
 import { Button } from "@material-tailwind/react";
-import { 
-  ArrowLeft, 
-  Car, 
-  DollarSign, 
-  Ruler, 
-  Star, 
-  ChevronLeft, 
-  ChevronRight 
+import {
+  ArrowLeft,
+  MapPin,
+  Car,
+  DollarSign,
+  Check,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  Share2
 } from 'lucide-react';
-import { 
-  FacebookShareButton, 
-  TwitterShareButton, 
-  WhatsappShareButton, 
+import {
+  FacebookShareButton,
+  TwitterShareButton,
+  WhatsappShareButton,
   EmailShareButton,
   FacebookIcon,
   TwitterIcon,
   WhatsappIcon,
-  EmailIcon 
+  EmailIcon
 } from 'react-share';
 
-const CarDetail = ({ icon, label, value }) => (
-  <div className="flex items-center gap-1">
-    {React.cloneElement(icon, { size: 16 })}
-    <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-sm font-semibold">{value}</p>
+const shouldHideValue = (value) => {
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'number' && value === 0) return true;
+  if (typeof value === 'string' && value.toString().toLowerCase() === 'na') return true;
+  return false;
+};
+
+const formatLocation = (city, state) => {
+  return [city, state]
+    .filter(item => !shouldHideValue(item))
+    .join(', ');
+};
+
+const CarDetail = ({ icon, label, value }) => {
+  if (shouldHideValue(value)) return null;
+  return (
+    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+      {React.cloneElement(icon, { size: 16 })}
+      <div>
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-sm font-semibold">{value}</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const ShareButton = ({ component: ShareButtonComponent, icon: IconComponent, color }) => (
   <ShareButtonComponent url={window.location.href}>
-    <div className="p-1 rounded-full" style={{ backgroundColor: color }}>
-      <IconComponent size={18} round bgStyle={{ fill: 'transparent' }} iconFillColor="white" />
+    <div className="p-2 rounded-full transition-transform hover:scale-110" style={{ backgroundColor: color }}>
+      <IconComponent size={20} round bgStyle={{ fill: 'transparent' }} iconFillColor="white" />
     </div>
   </ShareButtonComponent>
 );
 
-export function CarDetails() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { getVehicle } = useVehicles();
-  const [vehicle, setVehicle] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [mainImageIndex, setMainImageIndex] = useState(0);
-  const [userSelected, setUserSelected] = useState(false);
+const CustomShareButton = () => {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const currentUrl = window.location.href;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: document.title,
+          url: currentUrl
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(currentUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (error) {
+        console.error('Error copying to clipboard:', error);
+      }
+    }
+  };
+
+  return (
+    <button
+      onClick={handleShare}
+      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors w-full"
+    >
+      {copied ? (
+        <>
+          <Check className="w-5 h-5" />
+          <span>¡Copiado!</span>
+        </>
+      ) : (
+        <>
+          <Share2 className="w-5 h-5" />
+          <span>Compartir enlace</span>
+        </>
+      )}
+    </button>
+  );
+};
+
+export const CarDetails = () => {
+   const { id } = useParams();
+    const navigate = useNavigate();
+    const { getVehicle } = useVehicles();
+    const [car, setCar] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [mainImageIndex, setMainImageIndex] = useState(0);
+    const [userSelected, setUserSelected] = useState(false);
+    const [showArrows, setShowArrows] = useState(false);
+    const [arrowTimeout, setArrowTimeout] = useState(null);
 
   useEffect(() => {
-    const fetchVehicle = async () => {
+    const fetchCar = async () => {
       try {
-        const vehicleData = await getVehicle(id);
-        setVehicle(vehicleData.data);
+        const carData = await getVehicle(id);
+        setCar(carData.data);
       } catch (error) {
-        setError('Error al cargar el vehículo.');
+        setError('Error al cargar el automóvil.');
       } finally {
         setLoading(false);
       }
     };
-    fetchVehicle();
+    fetchCar();
   }, [id, getVehicle]);
 
-  useEffect(() => {
-    let interval;
-    if (vehicle && vehicle.images.length > 1 && !userSelected) {
-      interval = setInterval(() => {
-        setMainImageIndex((prevIndex) => 
-          prevIndex === vehicle.images.length - 1 ? 0 : prevIndex + 1
-        );
-      }, 5000);
-    }
-    return () => clearInterval(interval);
-  }, [vehicle, userSelected]);
-
-  const handleImageClick = (index) => {
-    setMainImageIndex(index);
-    setUserSelected(true);
-    setTimeout(() => setUserSelected(false), 40000);
-  };
-
-  const changeMainImage = (direction) => {
-    setMainImageIndex((prevIndex) => {
-      if (direction === 'left') {
-        return prevIndex === 0 ? vehicle.images.length - 1 : prevIndex - 1;
-      } else {
-        return prevIndex === vehicle.images.length - 1 ? 0 : prevIndex + 1;
+   useEffect(() => {
+      let interval;
+      if (car?.images.length > 1 && !userSelected) {
+        interval = setInterval(() => {
+          setMainImageIndex(prev => prev === car.images.length - 1 ? 0 : prev + 1);
+        }, 5000);
       }
-    });
-    setUserSelected(true);
-    setTimeout(() => setUserSelected(false), 40000);
-  };
+      return () => clearInterval(interval);
+    }, [car, userSelected]);
+  
+    useEffect(() => {
+      return () => {
+        if (arrowTimeout) clearTimeout(arrowTimeout);
+      };
+    }, [arrowTimeout]);
+  
+    const handleImageClick = (index) => {
+      setMainImageIndex(index);
+      setUserSelected(true);
+      setTimeout(() => setUserSelected(false), 40000);
+    };
+  
+    const handleTouchStart = () => {
+      setShowArrows(true);
+      if (arrowTimeout) clearTimeout(arrowTimeout);
+  
+      const timeout = setTimeout(() => {
+        setShowArrows(false);
+      }, 3000);
+  
+      setArrowTimeout(timeout);
+    };
+  
+    const changeMainImage = (direction) => {
+      if (!car?.images?.length) return;
+  
+      setMainImageIndex(prev => {
+        if (direction === 'left') {
+          return prev === 0 ? car.images.length - 1 : prev - 1;
+        }
+        return prev === car.images.length - 1 ? 0 : prev + 1;
+      });
+      setUserSelected(true);
+      setTimeout(() => setUserSelected(false), 40000);
+    };
+  
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex justify-center items-center pt-20 pb-32">
-        <div>Cargando vehículo...</div>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando automóvil...</div>;
+  if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
+  if (!car) return <div className="min-h-screen flex items-center justify-center">No se encontró el automóvil.</div>;
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-white flex justify-center items-center pt-20 pb-32">
-        <div className="text-red-500">{error}</div>
-      </div>
-    );
-  }
-
-  if (!vehicle) {
-    return (
-      <div className="min-h-screen bg-white flex justify-center items-center pt-20 pb-32">
-        <div>No se encontró el vehículo.</div>
-      </div>
-    );
-  }
+  const location = formatLocation(car.city, car.state);
 
   return (
-    <div className="min-h-screen bg-white pt-20 pb-32">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Button 
-          onClick={() => navigate(-1)} 
-          className="mb-6 flex items-center gap-2 bg-gray-100 text-gray-700 hover:bg-gray-200"
-        >
-          <ArrowLeft size={16} />
-          Volver
-        </Button>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Columna izquierda */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden h-96">
-              <div className="relative w-full h-full">
-                <img 
-                  src={vehicle.images[mainImageIndex]?.secure_url}
-                  alt={vehicle.car} 
-                  className="w-full h-full object-cover"
-                />
-                <button 
-                  onClick={() => changeMainImage('left')} 
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <button 
-                  onClick={() => changeMainImage('right')} 
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </div>
+    <div className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-16 lg:pt-12 xl:pt-16 2xl:pt-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Image Gallery Section */}
+          <div className="lg:col-span-8 space-y-4">
+            <div
+              className="relative h-[600px] bg-gray-200 rounded-xl overflow-hidden"
+              onTouchStart={handleTouchStart}
+              onMouseEnter={() => setShowArrows(true)}
+              onMouseLeave={() => setShowArrows(false)}
+            >
+              <img
+                src={car.images[mainImageIndex]?.secure_url}
+                alt={car.title}
+                className="w-full h-full object-cover"
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  changeMainImage('left');
+                }}
+                className={`
+                  absolute left-4 top-1/2 -translate-y-1/2 
+                  bg-white/90 rounded-full p-2 shadow-lg 
+                  hover:bg-white transition-all duration-300
+                  lg:opacity-100
+                  ${showArrows ? 'opacity-100' : 'opacity-0'}
+                `}
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  changeMainImage('right');
+                }}
+                className={`
+                  absolute right-4 top-1/2 -translate-y-1/2 
+                  bg-white/90 rounded-full p-2 shadow-lg 
+                  hover:bg-white transition-all duration-300
+                  lg:opacity-100
+                  ${showArrows ? 'opacity-100' : 'opacity-0'}
+                `}
+              >
+                <ChevronRight size={24} />
+              </button>
             </div>
-            
-            <div className="mt-4 grid grid-cols-6 gap-2">
-              {vehicle.images.map((image, index) => (
-                <div 
-                  key={index} 
-                  className="cursor-pointer aspect-square"
+
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {car.images.map((image, index) => (
+                <button
+                  key={index}
                   onClick={() => handleImageClick(index)}
+                  className={`
+                    flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden 
+                    transition-all duration-200
+                    ${index === mainImageIndex ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-blue-300'}
+                  `}
                 >
-                  <img 
-                    src={image.secure_url} 
-                    alt={`${vehicle.car} - ${index + 1}`} 
-                    className={`w-full h-full object-cover rounded-md ${
-                      index === mainImageIndex ? 'ring-2 ring-blue-500' : ''
-                    }`}
+                  <img
+                    src={image.secure_url}
+                    alt={`${car.title} - ${index + 1}`}
+                    className="w-full h-full object-cover"
                   />
-                </div>
+                </button>
               ))}
             </div>
           </div>
 
-          {/* Columna derecha */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h1 className="text-2xl font-bold mb-2">{vehicle.car}</h1>
-              
+          {/* Car Info Section */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <ArrowLeft size={20} />
+                  <span className="font-medium">Volver</span>
+                </button>
+              </div>
+              <h1 className="text-2xl font-bold mb-2">{car.title}</h1>
+              <p className="text-lg font-semibold text-gray-600 mb-4">{car.code}</p>
+
+              {location && (
+                <div className="flex items-center gap-2 text-gray-600 mb-4">
+                  <MapPin size={18} />
+                  <span>{location}</span>
+                </div>
+              )}
+
               <div className="text-3xl font-bold mb-6 flex items-center text-blue-600">
-                <DollarSign size={24} />
-                <span>{vehicle.price.toLocaleString()}</span>
+                <DollarSign size={28} />
+                <span>{car.price.toLocaleString()}</span>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <CarDetail icon={<Car />} label="Modelo" value={vehicle.model} />
-                <CarDetail icon={<Star />} label="Tipo de tracción" value={vehicle.tractionType} />
-                <CarDetail icon={<Ruler />} label="Kilómetros" value={`${vehicle.kilometer} km`} />
+
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <CarDetail icon={<Car />} label="Marca" value={car.brand} />
+                <CarDetail icon={<Car />} label="Modelo" value={car.model} />
+                <CarDetail icon={<Car />} label="Año" value={car.year} />
+                <CarDetail icon={<Star />} label="Kilómetros" value={car.kilometers} />
               </div>
-              
-              <div className="space-y-4">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700">
+
+              <div className="space-y-3">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 py-3">
                   Contactar al vendedor
                 </Button>
-                
-                <a 
-                  href={`https://wa.me/573160420188?text=Hola MS DE VALOR, estoy interesado en el vehículo ${vehicle.model} - ${vehicle.brand}-${vehicle.car}`} 
-                  target="_blank" 
+
+                <a
+                  href={`https://wa.me/573160420188?text=Hola, estoy interesado en el automóvil ${car.code}`}
+                  target="_blank"
                   rel="noopener noreferrer"
+                  className="block"
                 >
-                  <Button className="w-full bg-green-500 hover:bg-green-600">
+                  <Button className="w-full bg-green-500 hover:bg-green-600 py-3">
                     Contactar por WhatsApp
                   </Button>
                 </a>
-                
+
+                <CustomShareButton />
+
                 <div className="flex justify-center gap-4 pt-4">
                   <ShareButton component={FacebookShareButton} icon={FacebookIcon} color="#1877F2" />
                   <ShareButton component={TwitterShareButton} icon={TwitterIcon} color="#1DA1F2" />
@@ -214,13 +315,15 @@ export function CarDetails() {
             </div>
           </div>
         </div>
-        
-        {/* Descripción */}
-        <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
+
+        {/* Description and Features */}
+        <div className="bg-white rounded-xl p-6 shadow-sm mt-6">
           <h2 className="text-xl font-bold mb-4">Descripción</h2>
-          <p className="text-gray-700">{vehicle.description}</p>
+          <p className="text-gray-700 leading-relaxed">{car.description}</p>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default CarDetails;

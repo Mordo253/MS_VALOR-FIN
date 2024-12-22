@@ -46,7 +46,7 @@ const PropertyFormUP = ({ initialData, onChange, isSubmitting }) => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg relative">
-      <h2 className="text-2xl font-semibold mb-6">Actualizar Propiedad</h2>
+      <h2 className="text-2xl font-semibold mb-6">Datos de la Propiedad</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Campos de texto generales */}

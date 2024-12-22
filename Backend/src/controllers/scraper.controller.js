@@ -1,6 +1,8 @@
 import puppeteer from 'puppeteer';
+import mongoose from 'mongoose';
 import FinancialData from '../models/scraping.model.js';
 
+// Utilidad para esperar por selectores
 const waitForSelector = async (page, selector, timeout = 5000) => {
   try {
     await page.waitForSelector(selector, { timeout });
@@ -11,26 +13,7 @@ const waitForSelector = async (page, selector, timeout = 5000) => {
   }
 };
 
-// const shouldUpdate = async () => {
-//   try {
-//     const lastUpdate = await FinancialData.findOne({}, {}, { sort: { 'updatedAt': -1 } });
-    
-//     if (!lastUpdate) {
-//       return true;
-//     }
-
-//     const lastUpdateDate = new Date(lastUpdate.updatedAt);
-//     const today = new Date();
-
-//     return lastUpdateDate.getDate() !== today.getDate() ||
-//            lastUpdateDate.getMonth() !== today.getMonth() ||
-//            lastUpdateDate.getFullYear() !== today.getFullYear();
-//   } catch (error) {
-//     console.error('Error checking last update:', error);
-//     return false;
-//   }
-// };
-
+// Definición de scrapers para cada indicador
 const scrapers = {
   tasaUsura: async (page) => {
     await page.goto('https://www.larepublica.co/indicadores-economicos/bancos/tasa-de-usura', { waitUntil: 'networkidle0' });
@@ -189,13 +172,32 @@ const scrapers = {
   }
 };
 
-const scrapeAllData = async () => {
-  const shouldUpdateToday = await shouldUpdate();
-  if (!shouldUpdateToday) {
-    console.log('Data was already updated today. Skipping update.');
+// Función para verificar si se debe actualizar
+const shouldUpdate = async () => {
+  const now = new Date();
+  const hour = now.getHours();
+  
+  // Solo actualizar a las 8am
+  if (hour !== 8) {
     return false;
   }
 
+  // Verificar si ya se actualizó hoy
+  const latestUpdate = await FinancialData.findOne()
+    .sort({ updatedAt: -1 });
+
+  if (!latestUpdate) return true;
+
+  const lastUpdateDate = new Date(latestUpdate.updatedAt);
+  const today = new Date();
+
+  return lastUpdateDate.getDate() !== today.getDate() ||
+         lastUpdateDate.getMonth() !== today.getMonth() ||
+         lastUpdateDate.getFullYear() !== today.getFullYear();
+};
+
+// Función principal de scraping
+const scrapeAllData = async () => {
   let browser;
   try {
     browser = await puppeteer.launch({ 
@@ -205,35 +207,20 @@ const scrapeAllData = async () => {
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 });
 
+    const allResults = [];
+
     for (const [key, scraper] of Object.entries(scrapers)) {
       try {
         console.log(`Scraping data for ${key}...`);
         const dataArray = await scraper(page);
+        allResults.push(...dataArray);
         console.log(`Scraped data for ${key}:`, dataArray);
-
-        for (const data of dataArray) {
-          if (data && data.price !== null) {
-            const result = await FinancialData.findOneAndUpdate(
-              { symbol: data.symbol },
-              {
-                ...data,
-                source: 'La República',
-                updatedAt: new Date()
-              },
-              { upsert: true, new: true }
-            );
-            console.log(`Updated ${data.symbol} successfully:`, result.toObject());
-          } else {
-            console.warn(`Could not update ${data.symbol} due to missing data`);
-          }
-        }
       } catch (error) {
-        console.error(`Error scraping or saving ${key}:`, error);
+        console.error(`Error scraping ${key}:`, error);
       }
     }
 
-    console.log('All data update processes completed');
-    return true;
+    return allResults;
   } catch (error) {
     console.error('Error during scraping:', error);
     throw error;
@@ -242,28 +229,8 @@ const scrapeAllData = async () => {
   }
 };
 
-// export const updateFinancialData = async (req, res) => {
-//   try {
-//     const shouldUpdateToday = await shouldUpdate();
-//     if (!shouldUpdateToday) {
-//       const allData = await FinancialData.find({});
-//       return res.json({ 
-//         message: 'Data was already updated today. Using existing data.', 
-//         data: allData 
-//       });
-//     }
-
-//     await scrapeAllData();
-//     const allData = await FinancialData.find({});
-//     console.log('All data in MongoDB:', allData);
-//     res.json({ message: 'Data update completed successfully', data: allData });
-//   } catch (error) {
-//     console.error('Error in updateFinancialData:', error);
-//     res.status(500).json({ error: 'Error updating financial data', details: error.message });
-//   }
-// };
-
-export const updateFinancialData = async (req, res) => {
+// Función para actualizar los datos financieros
+const updateFinancialData = async (req, res) => {
   try {
     const shouldUpdateToday = await shouldUpdate();
     
@@ -275,48 +242,46 @@ export const updateFinancialData = async (req, res) => {
       });
     }
 
-    // Obtener datos existentes antes de la actualización
+    // Obtener datos existentes
     const existingData = await FinancialData.find({});
     const existingPrices = new Map(
       existingData.map(item => [item.symbol, item.price])
     );
 
-    // Obtener nuevos datos del scraper
+    // Realizar scraping
     const scrapedData = await scrapeAllData();
 
-    // Actualizar cada registro con cálculos de cambios
-    const currentHour = new Date().getHours();
-    const updatePromises = scrapedData.map(async item => {
-      const previousPrice = existingPrices.get(item.symbol) || item.price;
-      const change = item.price - previousPrice;
-      const percentChange = ((item.price - previousPrice) / previousPrice) * 100;
+    // Actualizar registros
+    const updatePromises = scrapedData
+      .filter(item => item && item.price !== null)
+      .map(async item => {
+        const previousPrice = existingPrices.get(item.symbol) || item.price;
+        const change = item.price - previousPrice;
+        const percentChange = ((item.price - previousPrice) / previousPrice) * 100;
 
-      return FinancialData.findOneAndUpdate(
-        { symbol: item.symbol },
-        {
-          $set: {
-            name: item.name,
-            price: item.price,
-            previousPrice: previousPrice,
-            change: change,
-            percentChange: percentChange,
-            source: item.source || 'scraper',
+        return FinancialData.findOneAndUpdate(
+          { symbol: item.symbol },
+          {
+            ...item,
+            previousPrice,
+            change,
+            percentChange,
+            source: 'La República',
             updatedAt: new Date(),
-            updatePeriod: currentHour < 12 ? 'morning' : 'afternoon'
+            updatePeriod: 'morning'
+          },
+          { 
+            upsert: true, 
+            new: true,
+            setDefaultsOnInsert: true 
           }
-        },
-        { 
-          upsert: true, 
-          new: true,
-          setDefaultsOnInsert: true 
-        }
-      );
+        );
     });
 
     await Promise.all(updatePromises);
     const updatedData = await FinancialData.find({});
     
-    console.log('All data in MongoDB:', updatedData);
+    console.log('All data updated successfully');
     res.json({ 
       message: 'Data update completed successfully',
       data: updatedData 
@@ -331,35 +296,55 @@ export const updateFinancialData = async (req, res) => {
   }
 };
 
-const shouldUpdate = async () => {
-  const now = new Date();
-  const hour = now.getHours();
-  
-  // Solo actualizar a las 8am y 6pm
-  if (hour !== 8 && hour !== 18) {
-    return false;
-  }
-
-  // Verificar si ya se actualizó en este período
-  const latestUpdate = await FinancialData.findOne()
-    .sort({ updatedAt: -1 });
-
-  if (!latestUpdate) return true;
-
-  const updateHour = new Date(latestUpdate.updatedAt).getHours();
-  const updatePeriod = hour < 12 ? 'morning' : 'afternoon';
-
-  // Evitar actualizaciones duplicadas en el mismo período
-  return latestUpdate.updatePeriod !== updatePeriod;
-};
+// Función para obtener los datos financieros
 const getFinancialData = async (req, res) => {
   try {
     const allData = await FinancialData.find({});
     res.json(allData);
   } catch (error) {
     console.error('Error fetching financial data:', error);
-    res.status(500).json({ error: 'Error fetching financial data', details: error.message });
+    res.status(500).json({ 
+      error: 'Error fetching financial data', 
+      details: error.message 
+    });
   }
 };
 
-export { scrapeAllData, getFinancialData };
+// Función para iniciar el scraper automáticamente
+const startAutomaticScraper = async () => {
+  try {
+    // Verificar la hora actual
+    const now = new Date();
+    const targetHour = 8; // 8 AM
+    
+    // Calcular el tiempo hasta la próxima actualización
+    let nextUpdate = new Date(now);
+    nextUpdate.setHours(targetHour, 0, 0, 0);
+    
+    if (now.getHours() >= targetHour) {
+      nextUpdate.setDate(nextUpdate.getDate() + 1);
+    }
+    
+    const timeUntilNextUpdate = nextUpdate - now;
+    
+    // Programar la próxima actualización
+    setTimeout(async () => {
+      await scrapeAllData();
+      startAutomaticScraper(); // Programar la siguiente actualización
+    }, timeUntilNextUpdate);
+    
+    console.log(`Next update scheduled for: ${nextUpdate}`);
+  } catch (error) {
+    console.error('Error in automatic scraper:', error);
+    // Reintentar en 1 hora en caso de error
+    setTimeout(startAutomaticScraper, 3600000);
+  }
+};
+
+// Exportar todas las funciones necesarias
+export { 
+  scrapeAllData, 
+  getFinancialData,
+  updateFinancialData,
+  startAutomaticScraper 
+};

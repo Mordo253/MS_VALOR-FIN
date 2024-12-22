@@ -4,15 +4,19 @@ import mongoose from "mongoose";
 const cloudinaryImageSchema = new mongoose.Schema({
   public_id: { type: String, required: true },
   secure_url: { type: String, required: true },
-  width: { type: Number, required: true },
-  height: { type: Number, required: true },
-  format: { type: String, required: true },
-  resource_type: { type: String, required: true, enum: ['image', 'video', 'raw', 'auto'] },
+  width: { type: Number, required: true, default: 540 },  // Valor predeterminado
+  height: { type: Number, required: true, default: 1170 }, // Valor predeterminado
+  format: { type: String, required: true, default: 'jpg' }, // Valor predeterminado
+  resource_type: { 
+    type: String, 
+    required: true, 
+    enum: ['image', 'video', 'raw', 'auto'], 
+    default: 'image'  // Valor predeterminado
+  },
 });
- 
 
 const carSchema = new mongoose.Schema({
-//   title:{ type: String, required: true  },
+  title:{ type: String, required: true  },
   car:{type: String, require:true},
   price: { type: Number, required: true },
   codigo: { type: String, required: true, unique: true },
@@ -26,11 +30,12 @@ const carSchema = new mongoose.Schema({
   place: { type: Number, required: true },
   door: { type: Number, required: true },
   fuel: { type: String, required: true },
+  disponible: { type: Boolean, default: true }, // Nuevo campo para estado de disponibilidad
   description:{ type: String, required: true},
   images: { type: [cloudinaryImageSchema], default: [] },
   imageLimit: { type: Number, default: 15 }
 }, {
-  timestamps: true,
+  timestamps: true, 
 });
 async function generateCodigo() {
   const lastCar = await Car.findOne().sort({ createdAt: -1 }).select('codigo');

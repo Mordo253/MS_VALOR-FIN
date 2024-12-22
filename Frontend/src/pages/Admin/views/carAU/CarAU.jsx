@@ -9,12 +9,12 @@ const PropertyCard = ({ title, imageSrc, icon: Icon }) => (
     <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-4">
       <img src={imageSrc} alt={title} className="object-cover w-full h-full" />
     </div>
-    <Link to="car-new">
-      <button className="w-full bg-gray-700 text-white py-2 rounded-lg flex items-center justify-center">
-        <Icon size={20} className="mr-2" />
-        <span>{title === "NEW CAR" ? "Add Car" : "Update Cars"}</span>
-      </button>
-    </Link>
+    <Link to={title === "NEW CAR" ? "car-new" : "car-list"}>
+          <button className="w-full bg-gray-700 text-white py-2 rounded-lg flex items-center justify-center">
+            <Icon size={20} className="mr-2" />
+            <span>{title === "NEW CAR" ? "Add Car" : "Update Car"}</span>
+          </button>
+        </Link>
   </div>
 );
 export const CarAU = () => {

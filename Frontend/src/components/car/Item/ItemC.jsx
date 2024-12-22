@@ -36,15 +36,16 @@ export const Item = ({
   const getValidFeatures = () => {
     const features = [
       { icon: <Square className="w-4 h-4 text-gray-500 shrink-0" />, value: kilometer, suffix: ' km' },
-      { icon: <span className="text-gray-500">{doors} puertas</span>, value: doors },
-      { icon: <span className="text-gray-500">{fuel}</span>, value: fuel },
-      { icon: <span className="text-gray-500">{tractionType}</span>, value: tractionType }
+      { icon: <span className="text-gray-500">combustible</span>, value: fuel },
+      { icon: <span className="text-gray-500">Tracción</span>, value: tractionType }
     ];
 
     return features.filter(feature => isValidField(feature.value));
   };
 
+  // Filtrar características únicas (sin duplicados)
   const validFeatures = getValidFeatures();
+
 
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden h-full flex flex-col">
