@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth.routes.js";
 import propertyRoutes from "./routes/property.routes.js";
 import scraperRoutes from "./routes/scraper.routes.js";
 import carRoutes from "./routes/car.routes.js";
+import postRoutes from "./routes/post.routes.js";
 
 // Cargar variables de entorno
 dotenv.config();
@@ -37,7 +38,7 @@ app.use(cors({
     exposedHeaders: ['Content-Range', 'X-Content-Range'],
 }));
 
-// Resto de tu configuración actual...
+// Configuración de Helmet para mejorar la seguridad
 app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
@@ -47,15 +48,21 @@ app.use(helmet({
     frameguard: { action: 'deny' }
 }));
 
+// Middleware para parsear el cuerpo de las solicitudes
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Logger para las solicitudes HTTP
 app.use(morgan("dev"));
+
+// Middleware para manejar las cookies
 app.use(cookieParser());
 
 // Rutas de la API
 app.use("/api/auth", authRoutes);
 app.use("/api/property", propertyRoutes);
 app.use("/api/car", carRoutes);
+app.use("/api/post", postRoutes);
 app.use("/api", scraperRoutes);
 
 // Manejador de errores 404 para rutas de API

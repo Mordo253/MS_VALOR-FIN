@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Folder, Car } from 'lucide-react';
+import { Home, Folder, Car, Blocks, Settings } from 'lucide-react';
 import { Link} from 'react-router-dom';
 export const Sidebar = () => (
   <aside className="fixed left-0 top-0 h-full w-64 bg-[#2c3e50] text-white p-5">
@@ -15,6 +15,8 @@ export const Sidebar = () => (
         { icon: Home, label: 'Dashboard', path: 'dashboard' },
         { icon: Folder, label: 'Inmuebles', path: 'property' },
         { icon: Car, label: 'Vehículos', path: 'car' },
+        { icon: Blocks, label: 'Blog', path: 'post' },
+        { icon: Settings, label: 'Configuración', path: 'settings' },
       ].map(({ icon: Icon, label, path }) => (
         <Link
           key={label}

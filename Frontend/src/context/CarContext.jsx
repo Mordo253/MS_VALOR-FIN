@@ -39,56 +39,51 @@ export const VehicleProvider = ({ children }) => {
     }
   }, []);
 
-  // Crear un nuevo vehículo
   const createVehicle = async (vehicleData) => {
     try {
-      console.log("Datos que se envían al backend:", vehicleData);
-
-      // Eliminar el campo 'codigo' ya que lo genera automáticamente el backend
-      const { codigo, ...vehicleDataWithoutCodigo } = vehicleData;
-
-      // Procesar los datos numéricos de forma correcta
+      // Procesar datos numéricos y booleanos
       const processedData = {
-        ...vehicleDataWithoutCodigo,
+        ...vehicleData,
         price: Number(vehicleData.price) || 0,
         kilometer: Number(vehicleData.kilometer) || 0,
         registrationYear: Number(vehicleData.registrationYear) || 0,
         door: Number(vehicleData.door) || 0,
-        model: vehicleData.model || "",  // Si model es string, no convertirlo a number
+        model: vehicleData.model || "", // Asegurar compatibilidad con strings
+        disponible: Boolean(vehicleData.disponible),
+        images: vehicleData.images.map((img) => ({
+          public_id: img.public_id || null,
+          secure_url: img.secure_url || null,
+          file: img.file || null, // Solo se envía si es nueva
+          resource_type: img.resource_type || "image",
+        })),
       };
-
-      console.log("Datos procesados antes de enviar:", processedData);
-
-      // Enviar los datos al backend como JSON
+  
+      // Enviar los datos al backend
       const response = await axios.post(`${API_URL}/car/cars`, processedData, {
         headers: {
           "Content-Type": "application/json",
         },
       });
-
-      // Validar la respuesta del backend
+  
       if (!response.data || !response.data.data) {
-        console.error("Respuesta del servidor incompleta:", response);
         throw new Error("La respuesta del servidor no contiene los datos esperados");
       }
-
+  
+      // Actualizar el estado global
       const newCar = response.data.data;
-
-      // Actualizar el estado del contexto
       setVehicles((prev) => [...prev, newCar]);
-
+  
       console.log("Vehículo creado con éxito:", newCar);
-
       return { success: true, data: newCar };
     } catch (err) {
-      // Manejo detallado de errores
       console.error("Error al crear vehículo:", err.response || err.message);
-
-      const errorMessage = err.response?.data?.message || "Error al comunicarse con el servidor";
-
-      return { success: false, error: errorMessage };
+      return {
+        success: false,
+        error: err.response?.data?.message || "Error al comunicarse con el servidor",
+      };
     }
   };
+  
 
   // Obtener un vehículo por ID
   const getVehicle = async (id) => {
@@ -106,111 +101,60 @@ export const VehicleProvider = ({ children }) => {
 
   const updateVehicle = async (id, vehicleData) => {
     try {
-      console.log("Datos recibidos para actualizar:", vehicleData);
-  
-      // Procesar los datos numéricos y básicos
+      // Procesar datos numéricos, booleanos y de imágenes
       const processedData = {
         ...vehicleData,
-        precio: Number(vehicleData.precio) || 0,
-        año: Number(vehicleData.año) || 0,
-        kilometraje: Number(vehicleData.kilometraje) || 0,
+        price: Number(vehicleData.price) || 0,
+        kilometer: Number(vehicleData.kilometer) || 0,
+        registrationYear: Number(vehicleData.registrationYear) || 0,
+        door: Number(vehicleData.door) || 0,
+        model: vehicleData.model || "",
         disponible: Boolean(vehicleData.disponible),
-        updatedAt: new Date().toISOString(),
-        // Procesar imágenes
-        images: (vehicleData.images || []).map(img => ({
-          public_id: img.public_id,
-          secure_url: img.secure_url,
-          file: img.file || null,
-          resource_type: img.resource_type || 'image'
-        })).filter(img => {
-          // Mantener solo imágenes válidas
-          if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
-            return true; // Imágenes nuevas con base64
-          }
-          if (img.secure_url && !img.secure_url.startsWith('blob:')) {
-            return true; // Imágenes existentes con URL válida
-          }
-          return false;
-        }),
-        // Imágenes a eliminar (filtrar IDs temporales)
-        imagesToDelete: (vehicleData.imagesToDelete || []).filter(id => 
-          typeof id === 'string' && !id.startsWith('temp_')
-        )
+        images: vehicleData.images.map((img) => ({
+          public_id: img.public_id || null,
+          secure_url: img.secure_url || null,
+          file: img.file || null, // Incluir solo si es nueva
+          resource_type: img.resource_type || "image",
+          width: img.width || 0,
+          height: img.height || 0,
+          format: img.format || "",
+        })),
+        imagesToDelete: vehicleData.imagesToDelete || [],
       };
   
-      // Validaciones adicionales
-      if (!processedData.images || processedData.images.length === 0) {
-        throw new Error('Debe incluir al menos una imagen');
-      }
+      console.log("Datos procesados antes de enviar:", processedData);
   
-      // Verificar tamaño de imágenes base64
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      const oversizedImages = processedData.images.filter(img => 
-        img.file && typeof img.file === 'string' && 
-        (img.file.length * 0.75) > maxSize
-      );
-  
-      if (oversizedImages.length > 0) {
-        throw new Error('Una o más imágenes exceden el tamaño máximo permitido (5MB)');
-      }
-  
-      // Log seguro (sin mostrar datos base64 completos)
-      console.log("Datos procesados antes de enviar:", {
-        ...processedData,
-        images: processedData.images.map(img => ({
-          ...img,
-          file: img.file ? 'base64_data_present' : 'no_file',
-          secure_url: img.secure_url ? 'url_present' : 'no_url'
-        }))
-      });
-  
-      // Realizar la petición
+      // Enviar datos al backend
       const response = await axios.put(
-        `${API_URL}/car/cars/${id}`, 
+        `${API_URL}/car/cars/${id}`,
         processedData,
         {
           headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
           },
-          timeout: 30000, // 30 segundos
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity
+          timeout: 30000,
         }
       );
   
-      // Verificar respuesta
-      if (!response.data || !response.data.data) {
-        console.error('Respuesta del servidor incompleta:', response);
-        throw new Error('La respuesta del servidor no contiene los datos esperados');
+      if (!response.data || !response.data.success) {
+        throw new Error(response.data?.message || "Error al actualizar el vehículo");
       }
   
+      // Actualizar el vehículo en el estado global
       const updatedVehicle = response.data.data;
+      console.log("Vehículo actualizado exitosamente:", updatedVehicle);
   
-      // Actualizar estado local
-      setVehicles(prevVehicles =>
-        prevVehicles.map(v => v._id === updatedVehicle._id ? updatedVehicle : v)
+      setVehicles((prevVehicles) =>
+        prevVehicles.map((v) => (v._id === updatedVehicle._id ? updatedVehicle : v))
       );
   
-      return response.data;
-  
+      return { success: true, data: updatedVehicle };
     } catch (error) {
-      console.error('Error al actualizar vehículo:', error);
-      console.error('Detalles del error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-  
-      // Manejar errores específicos
-      if (error.response?.status === 413) {
-        throw new Error('Las imágenes son demasiado grandes. Por favor, reduzca su tamaño.');
-      } else if (error.code === 'ECONNABORTED') {
-        throw new Error('La operación tardó demasiado tiempo. Por favor, intente nuevamente.');
-      } else if (error.response?.data?.message) {
-        throw new Error(error.response.data.message);
-      } else {
-        throw new Error('Error al actualizar el vehículo. Por favor, intente nuevamente.');
-      }
+      console.error("Error al actualizar vehículo:", error.message);
+      return {
+        success: false,
+        error: error.response?.data?.message || "Error al actualizar el vehículo",
+      };
     }
   };
   

@@ -25,7 +25,7 @@ const LinkCard = ({ href, text, icon, subtitle }) => (
 export const ToolsPage = () => {
   
     const links = [
-      { href: "https://www.fasecolda.com/", text: "Fasecolda", icon: "🏛️", subtitle: "" },
+      { href: "https://www.fasecolda.com/guia-de-valores/", text: "Fasecolda", icon: "🏛️", subtitle: "" },
       { href: "https://www.minvivienda.gov.co/viceministerio-de-vivienda/mi-casa-ya", text: "Mi Casa Ya", icon: "🏠", subtitle: "" },
       { 
         href: "https://certificados.supernotariado.gov.co/certificado", 

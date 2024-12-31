@@ -20,7 +20,7 @@
     "cheerio": "^1.0.0",
     "dayjs": "^1.11.13",
     "flowbite-react": "^0.10.1",
-    "framer-motion": "^11.7.0",
+    "framer-motion": "^11.15.0",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",

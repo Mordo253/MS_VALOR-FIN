@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import { Sidebar } from "../components/Sidebar/Sidebar";
 import { Dashboard } from "../views/Dashboard/Dashboard";
-import { Settings } from "../views/Settings/Settings";
+import Settings  from "../views/Settings/Settings";
 import { CarAU } from '../views/carAU/CarAU';
 import { PropertyAU } from '../views/propertyAU/PropertyAU';
 import { Adminnav } from '../components/Navbars/Adminnav';
@@ -11,6 +11,10 @@ import PropertyUP from '../views/propertyAU/Property/PropertyUP';
 import CarSent from "../views/carAU/CarSent";
 import { CarEditList } from "../views/carAU/CarEditList";
 import CarUP from "../views/carAU/CarUP";
+import { PostAU } from "../views/Posts/PostAU";
+import PostsSent from "../views/Posts/PostsSent";
+import PostsUP from "../views/Posts/PostsUP";
+import PostsEdistList  from "../views/Posts/PostsEdistList";
 
 export const Admin = () => {
   return (
@@ -30,6 +34,10 @@ export const Admin = () => {
             <Route path="/property/property-new" element={<PropertyForm />} />
             <Route path="/property/property-update/:id" element={<PropertyUP/>} />
             <Route path="/property/property-list" element={<PropertyEditList />} />
+            <Route path="/post" element={<PostAU />} />
+            <Route path="/post/post-new" element={<PostsSent/>} />
+            <Route path="/post/post-update/:slug" element={<PostsUP/>} />
+            <Route path="/post/post-list" element={<PostsEdistList />} />
           </Routes>
         </div> 
       </main>

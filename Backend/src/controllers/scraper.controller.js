@@ -1,8 +1,8 @@
+// controllers/scraper.controller.js
 import puppeteer from 'puppeteer';
 import mongoose from 'mongoose';
 import FinancialData from '../models/scraping.model.js';
 
-// Utilidad para esperar por selectores
 const waitForSelector = async (page, selector, timeout = 5000) => {
   try {
     await page.waitForSelector(selector, { timeout });
@@ -13,12 +13,12 @@ const waitForSelector = async (page, selector, timeout = 5000) => {
   }
 };
 
-// Definición de scrapers para cada indicador
 const scrapers = {
   tasaUsura: async (page) => {
+    console.log('Iniciando scraping de Tasa Usura');
     await page.goto('https://www.larepublica.co/indicadores-economicos/bancos/tasa-de-usura', { waitUntil: 'networkidle0' });
     await waitForSelector(page, '.price');
-    return page.evaluate(() => {
+    const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
       const change = document.querySelector('.change')?.textContent.trim();
       const percentChange = document.querySelector('.percent-change')?.textContent.trim();
@@ -32,11 +32,15 @@ const scrapers = {
         date: date
       }];
     });
+    console.log('Datos obtenidos Tasa Usura:', data);
+    return data;
   },
+
   dtf: async (page) => {
+    console.log('Iniciando scraping de DTF');
     await page.goto('https://www.larepublica.co/indicadores-economicos/bancos/dtf', { waitUntil: 'networkidle0' });
     await waitForSelector(page, '.price');
-    return page.evaluate(() => {
+    const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
       const change = document.querySelector('.percent-change')?.textContent.trim();
       const period = document.querySelector('.period')?.textContent.trim();
@@ -49,11 +53,15 @@ const scrapers = {
         period: period
       }];
     });
+    console.log('Datos obtenidos DTF:', data);
+    return data;
   },
+
   oro: async (page) => {
+    console.log('Iniciando scraping de Oro');
     await page.goto('https://www.larepublica.co/indicadores-economicos/commodities/oro', { waitUntil: 'networkidle0' });
     await waitForSelector(page, '.price');
-    return page.evaluate(() => {
+    const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
       const change = document.querySelector('.change')?.textContent.trim();
       const percentChange = document.querySelector('.percent-change')?.textContent.trim();
@@ -67,11 +75,15 @@ const scrapers = {
         date: date
       }];
     });
+    console.log('Datos obtenidos Oro:', data);
+    return data;
   },
+
   petroleo: async (page) => {
+    console.log('Iniciando scraping de Petróleo');
     await page.goto('https://www.larepublica.co/indicadores-economicos/commodities/petroleo', { waitUntil: 'networkidle0' });
     await waitForSelector(page, '.price');
-    return page.evaluate(() => {
+    const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
       const change = document.querySelector('.change')?.textContent.trim();
       const percentChange = document.querySelector('.percent-change')?.textContent.trim();
@@ -85,11 +97,15 @@ const scrapers = {
         date: date
       }];
     });
+    console.log('Datos obtenidos Petróleo:', data);
+    return data;
   },
+
   dolar: async (page) => {
+    console.log('Iniciando scraping de Dólar');
     await page.goto('https://www.larepublica.co/indicadores-economicos/mercado-cambiario/dolar', { waitUntil: 'networkidle0' });
     await waitForSelector(page, '.price');
-    return page.evaluate(() => {
+    const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
       const change = document.querySelector('.change')?.textContent.trim();
       const percentChange = document.querySelector('.percent-change')?.textContent.trim();
@@ -111,11 +127,15 @@ const scrapers = {
         transactions: transactions ? parseInt(transactions.replace(/\./g, '')) : null
       }];
     });
+    console.log('Datos obtenidos Dólar:', data);
+    return data;
   },
+
   ipc: async (page) => {
+    console.log('Iniciando scraping de IPC');
     await page.goto('https://www.larepublica.co/indicadores-economicos/macro/ipc', { waitUntil: 'networkidle0' });
     await waitForSelector(page, '.price');
-    return page.evaluate(() => {
+    const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
       const change = document.querySelector('.change')?.textContent.trim();
       const percentChange = document.querySelector('.percent-change')?.textContent.trim();
@@ -129,7 +149,10 @@ const scrapers = {
         date: date
       }];
     });
+    console.log('Datos obtenidos IPC:', data);
+    return data;
   },
+
   uvr: async (page) => {
     await page.goto('https://www.larepublica.co/indicadores-economicos/bancos/uvr', { waitUntil: 'networkidle0' });
     await waitForSelector(page, '.price');
@@ -148,6 +171,7 @@ const scrapers = {
       }];
     });
   },
+  
   euro: async (page) => {
     await page.goto('https://www.larepublica.co/indicadores-economicos/mercado-cambiario/euro', { waitUntil: 'networkidle0' });
     await waitForSelector(page, '.price');
@@ -172,35 +196,11 @@ const scrapers = {
   }
 };
 
-// Función para verificar si se debe actualizar
-const shouldUpdate = async () => {
-  const now = new Date();
-  const hour = now.getHours();
-  
-  // Solo actualizar a las 8am
-  if (hour !== 8) {
-    return false;
-  }
-
-  // Verificar si ya se actualizó hoy
-  const latestUpdate = await FinancialData.findOne()
-    .sort({ updatedAt: -1 });
-
-  if (!latestUpdate) return true;
-
-  const lastUpdateDate = new Date(latestUpdate.updatedAt);
-  const today = new Date();
-
-  return lastUpdateDate.getDate() !== today.getDate() ||
-         lastUpdateDate.getMonth() !== today.getMonth() ||
-         lastUpdateDate.getFullYear() !== today.getFullYear();
-};
-
-// Función principal de scraping
 const scrapeAllData = async () => {
   let browser;
   try {
-    browser = await puppeteer.launch({ 
+    console.log('Iniciando proceso de scraping general');
+    browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: true
     });
@@ -208,143 +208,99 @@ const scrapeAllData = async () => {
     await page.setViewport({ width: 1920, height: 1080 });
 
     const allResults = [];
-
     for (const [key, scraper] of Object.entries(scrapers)) {
       try {
-        console.log(`Scraping data for ${key}...`);
+        console.log(`Ejecutando scraper para ${key}...`);
         const dataArray = await scraper(page);
         allResults.push(...dataArray);
-        console.log(`Scraped data for ${key}:`, dataArray);
+        console.log(`Scraping de ${key} completado:`, dataArray);
       } catch (error) {
-        console.error(`Error scraping ${key}:`, error);
+        console.error(`Error en scraping de ${key}:`, error);
       }
     }
-
+    console.log('Proceso de scraping completado');
     return allResults;
-  } catch (error) {
-    console.error('Error during scraping:', error);
-    throw error;
   } finally {
     if (browser) await browser.close();
   }
 };
 
-// Función para actualizar los datos financieros
-const updateFinancialData = async (req, res) => {
+const getFinancialData = async (req, res) => {
   try {
-    const shouldUpdateToday = await shouldUpdate();
-    
-    if (!shouldUpdateToday) {
-      const allData = await FinancialData.find({});
-      return res.json({ 
-        message: 'Data was already updated today. Using existing data.',
-        data: allData 
-      });
-    }
+    console.log(`[${new Date().toLocaleString()}] Solicitando datos financieros`);
+    const data = await FinancialData.find({}).sort({ updatedAt: -1 });
+    console.log(`Datos obtenidos: ${data.length} registros`);
+    res.json(data);
+  } catch (error) {
+    console.error('Error al obtener datos:', error);
+    res.status(500).json({ error: 'Failed to fetch data', details: error.message });
+  }
+};
 
+const updateFinancialData = async (req, res) => {
+  console.log(`[${new Date().toLocaleString()}] Iniciando actualización de datos financieros`);
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
     // Obtener datos existentes
-    const existingData = await FinancialData.find({});
-    const existingPrices = new Map(
-      existingData.map(item => [item.symbol, item.price])
-    );
+    const existingData = await FinancialData.find({}).session(session);
+    const existingDataMap = new Map(existingData.map(item => [item.symbol, item]));
 
-    // Realizar scraping
+    // Realizar scraping de nuevos datos
     const scrapedData = await scrapeAllData();
 
-    // Actualizar registros
+    // Procesar y actualizar datos
     const updatePromises = scrapedData
       .filter(item => item && item.price !== null)
       .map(async item => {
-        const previousPrice = existingPrices.get(item.symbol) || item.price;
-        const change = item.price - previousPrice;
-        const percentChange = ((item.price - previousPrice) / previousPrice) * 100;
+        const existing = existingDataMap.get(item.symbol);
+        
+        // Si no hay datos existentes, el precio actual será también el precio previo
+        const previousPrice = existing ? existing.price : item.price;
+        
+        // Calcular cambios
+        const priceChange = parseFloat((item.price - previousPrice).toFixed(2));
+        const pricePercentChange = parseFloat(((item.price - previousPrice) / previousPrice * 100).toFixed(2));
 
         return FinancialData.findOneAndUpdate(
           { symbol: item.symbol },
           {
             ...item,
             previousPrice,
-            change,
-            percentChange,
+            change: priceChange,
+            percentChange: pricePercentChange,
             source: 'La República',
-            updatedAt: new Date(),
-            updatePeriod: 'morning'
+            updatedAt: new Date()
           },
           { 
             upsert: true, 
             new: true,
+            session,
             setDefaultsOnInsert: true 
           }
         );
     });
 
-    await Promise.all(updatePromises);
-    const updatedData = await FinancialData.find({});
+    const results = await Promise.all(updatePromises);
+    await session.commitTransaction();
     
-    console.log('All data updated successfully');
+    console.log(`Actualización completada: ${results.length} registros actualizados`);
     res.json({ 
-      message: 'Data update completed successfully',
-      data: updatedData 
+      message: 'Update completed',
+      data: results 
     });
-
   } catch (error) {
-    console.error('Error in updateFinancialData:', error);
-    res.status(500).json({ 
-      error: 'Error updating financial data', 
-      details: error.message 
-    });
+    console.error('Error en actualización:', error);
+    await session.abortTransaction();
+    res.status(500).json({ error: 'Update failed', details: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
-// Función para obtener los datos financieros
-const getFinancialData = async (req, res) => {
-  try {
-    const allData = await FinancialData.find({});
-    res.json(allData);
-  } catch (error) {
-    console.error('Error fetching financial data:', error);
-    res.status(500).json({ 
-      error: 'Error fetching financial data', 
-      details: error.message 
-    });
-  }
-};
-
-// Función para iniciar el scraper automáticamente
-const startAutomaticScraper = async () => {
-  try {
-    // Verificar la hora actual
-    const now = new Date();
-    const targetHour = 8; // 8 AM
-    
-    // Calcular el tiempo hasta la próxima actualización
-    let nextUpdate = new Date(now);
-    nextUpdate.setHours(targetHour, 0, 0, 0);
-    
-    if (now.getHours() >= targetHour) {
-      nextUpdate.setDate(nextUpdate.getDate() + 1);
-    }
-    
-    const timeUntilNextUpdate = nextUpdate - now;
-    
-    // Programar la próxima actualización
-    setTimeout(async () => {
-      await scrapeAllData();
-      startAutomaticScraper(); // Programar la siguiente actualización
-    }, timeUntilNextUpdate);
-    
-    console.log(`Next update scheduled for: ${nextUpdate}`);
-  } catch (error) {
-    console.error('Error in automatic scraper:', error);
-    // Reintentar en 1 hora en caso de error
-    setTimeout(startAutomaticScraper, 3600000);
-  }
-};
-
-// Exportar todas las funciones necesarias
-export { 
-  scrapeAllData, 
+export {
+  scrapeAllData,
   getFinancialData,
-  updateFinancialData,
-  startAutomaticScraper 
+  updateFinancialData
 };

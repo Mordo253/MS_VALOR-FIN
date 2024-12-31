@@ -1,11 +1,10 @@
+// components/Indicador.js
 import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { FRONTEND_URL } from '../../config';
-
-const UPDATE_TIMES = [8, 18]; // 8am y 6pm
-const PRICE_HISTORY_KEY = 'market_price_history';
+import { FRONTEND_URL } from "../../config";
 
 const formatPrice = (value) => {
+  if (value === null || value === undefined) return '-';
   return Number(value).toLocaleString('es-CO', { 
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -13,7 +12,7 @@ const formatPrice = (value) => {
 };
 
 const PriceChange = ({ currentPrice, previousPrice, hideArrow = false }) => {
-  if (!previousPrice) return null;
+  if (!previousPrice || !currentPrice) return null;
   
   const priceDiff = currentPrice - previousPrice;
   const percentChange = (priceDiff / previousPrice) * 100;
@@ -30,101 +29,117 @@ const PriceChange = ({ currentPrice, previousPrice, hideArrow = false }) => {
   );
 };
 
-const FinancialItem = ({ symbol, price, previousPrice }) => (
-  <div className="flex items-center space-x-4 px-6 py-2 whitespace-nowrap">
-    <span className="text-gray-300 min-w-[100px]">{symbol}</span>
-    <div className="inline-flex items-center gap-3">
-      <span className="font-semibold text-white">
-        {formatPrice(price)}
-      </span>
-      <PriceChange 
-        currentPrice={price}
-        previousPrice={previousPrice}
-      />
+const FinancialItem = ({ symbol, name, price, previousPrice }) => {
+  const displaySymbol = symbol.includes('USD') || symbol.includes('EUR') ? '$' : 
+                       symbol.includes('IPC') || symbol.includes('TASA') || symbol.includes('DTF') ? '%' : '';
+
+  return (
+    <div className="flex items-center space-x-4 px-6 py-2 whitespace-nowrap">
+      <span className="text-gray-300 min-w-[100px]">{name || symbol}</span>
+      <div className="inline-flex items-center gap-3">
+        <span className="font-semibold text-white">
+          {displaySymbol}{formatPrice(price)}
+        </span>
+        <PriceChange 
+          currentPrice={price}
+          previousPrice={previousPrice}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const Indicador = () => {
   const [financialData, setFinancialData] = useState([]);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [lastUpdate, setLastUpdate] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [error, setError] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const fetchFinancialData = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(`${FRONTEND_URL}/api/financial-data`);
-      if (!response.ok) throw new Error('Network response was not ok');
-      
-      const newData = await response.json();
-      const prevData = localStorage.getItem(PRICE_HISTORY_KEY);
-      const previousPrices = prevData ? JSON.parse(prevData) : null;
-      
-      const enrichedData = newData.map(item => ({
-        ...item,
-        previousPrice: previousPrices?.find(p => p.symbol === item.symbol)?.price || item.price
-      }));
+  const shouldUpdate = () => {
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+    
+    return (
+      (hour === 8 && minute < 30) || 
+      (hour === 12 && minute < 30)
+    );
+  };
 
-      localStorage.setItem(PRICE_HISTORY_KEY, JSON.stringify(
-        enrichedData.map(({ symbol, price }) => ({ symbol, price }))
-      ));
+  const fetchData = async () => {
+    try {
+      setError(null);
       
-      setFinancialData(enrichedData);
-      setLastUpdated(new Date());
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching data:', error);
+      if (shouldUpdate()) {
+        setIsUpdating(true);
+        const response = await fetch(`${FRONTEND_URL}/api/update-data`, {
+          method: 'POST'
+        });
+        
+        if (!response.ok) throw new Error('Error en la actualizaciÃ³n');
+        
+        const result = await response.json();
+        setFinancialData(result.data);
+        setLastUpdate(new Date());
+      } else {
+        const response = await fetch(`${FRONTEND_URL}/api/financial-data`);
+        if (!response.ok) throw new Error('Error al obtener datos');
+        
+        const data = await response.json();
+        setFinancialData(data);
+        setLastUpdate(new Date());
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err.message);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   useEffect(() => {
-    const checkUpdateTime = () => {
-      const now = new Date();
-      if (UPDATE_TIMES.includes(now.getHours()) && now.getMinutes() === 0) {
-        fetchFinancialData();
-      }
-    };
+    fetchData();
+    
+    const checkInterval = setInterval(() => {
+      fetchData();
+    }, 60000); // Verificar cada minuto
 
-    fetchFinancialData();
-    const interval = setInterval(checkUpdateTime, 60000);
-    return () => clearInterval(interval);
+    return () => clearInterval(checkInterval);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="fixed top-0 left-0 right-0 bg-gray-900 text-white py-2 text-center">
-        Cargando datos financieros...
-      </div>
-    );
-  }
+  const sortedData = [...financialData].sort((a, b) => a.symbol.localeCompare(b.symbol));
 
   return (
-    <div className="fixed top-0 left-0 right-0 bg-gray-900 text-white h-12 overflow-hidden z-[1002]">
-      <div className="h-full flex items-center justify-between">
-        <div className="flex-1 overflow-hidden">
-          <div className="ticker-track inline-flex">
-            {[...financialData, ...financialData, ...financialData].map((item, index) => (
-              <FinancialItem
-                key={`item-${index}`}
-                symbol={item.symbol}
-                price={item.price}
-                previousPrice={item.previousPrice}
-              />
-            ))}
+    <>
+      <div className="fixed top-0 left-0 right-0 bg-gray-900 text-white h-12 overflow-hidden z-[1002]">
+        <div className="h-full flex items-center justify-between">
+          <div className="flex-1 overflow-hidden">
+            <div className="ticker-track inline-flex">
+              {[...sortedData, ...sortedData, ...sortedData].map((item, index) => (
+                <FinancialItem
+                  key={`${item.symbol}-${index}`}
+                  symbol={item.symbol}
+                  name={item.name}
+                  price={item.price}
+                  previousPrice={item.previousPrice}
+                />
+              ))}
+            </div>
           </div>
+          {!isMobile && lastUpdate && (
+            <div className="px-4 text-xs text-gray-400">
+              Actualizado: {lastUpdate.toLocaleTimeString()}
+            </div>
+          )}
         </div>
-        {lastUpdated && !isMobile && (
-          <div className="px-4 text-xs text-gray-400">
-            Actualizado: {lastUpdated.toLocaleTimeString()}
-          </div>
-        )}
       </div>
 
       <style>{`
@@ -132,22 +147,19 @@ export const Indicador = () => {
           animation: ticker 30s linear infinite;
           will-change: transform;
         }
-
         .ticker-track:hover {
           animation-play-state: paused;
         }
-
         @keyframes ticker {
           0% { transform: translateX(0); }
           100% { transform: translateX(-33.33%); }
         }
-
         @media (max-width: 640px) {
           .ticker-track {
             animation-duration: 20s;
           }
         }
       `}</style>
-    </div>
+    </>
   );
 };

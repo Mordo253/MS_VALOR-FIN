@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useVehicles } from '../../context/CarContext';  // Assuming you have a CarContext similar to carContext
+import { useVehicles } from '../../context/CarContext';
 import { Button } from "@material-tailwind/react";
 import {
   ArrowLeft,
@@ -11,7 +11,15 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
-  Share2
+  Share2,
+  Calendar,
+  Gauge,
+  Palette,
+  Cog,
+  Fuel,
+  DoorOpen,
+  Users,
+  X
 } from 'lucide-react';
 import {
   FacebookShareButton,
@@ -105,16 +113,16 @@ const CustomShareButton = () => {
 };
 
 export const CarDetails = () => {
-   const { id } = useParams();
-    const navigate = useNavigate();
-    const { getVehicle } = useVehicles();
-    const [car, setCar] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [mainImageIndex, setMainImageIndex] = useState(0);
-    const [userSelected, setUserSelected] = useState(false);
-    const [showArrows, setShowArrows] = useState(false);
-    const [arrowTimeout, setArrowTimeout] = useState(null);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { getVehicle } = useVehicles();
+  const [car, setCar] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [mainImageIndex, setMainImageIndex] = useState(0);
+  const [userSelected, setUserSelected] = useState(false);
+  const [showArrows, setShowArrows] = useState(false);
+  const [arrowTimeout, setArrowTimeout] = useState(null);
 
   useEffect(() => {
     const fetchCar = async () => {
@@ -130,52 +138,51 @@ export const CarDetails = () => {
     fetchCar();
   }, [id, getVehicle]);
 
-   useEffect(() => {
-      let interval;
-      if (car?.images.length > 1 && !userSelected) {
-        interval = setInterval(() => {
-          setMainImageIndex(prev => prev === car.images.length - 1 ? 0 : prev + 1);
-        }, 5000);
-      }
-      return () => clearInterval(interval);
-    }, [car, userSelected]);
-  
-    useEffect(() => {
-      return () => {
-        if (arrowTimeout) clearTimeout(arrowTimeout);
-      };
-    }, [arrowTimeout]);
-  
-    const handleImageClick = (index) => {
-      setMainImageIndex(index);
-      setUserSelected(true);
-      setTimeout(() => setUserSelected(false), 40000);
-    };
-  
-    const handleTouchStart = () => {
-      setShowArrows(true);
+  useEffect(() => {
+    let interval;
+    if (car?.images?.length > 1 && !userSelected) {
+      interval = setInterval(() => {
+        setMainImageIndex(prev => prev === car.images.length - 1 ? 0 : prev + 1);
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [car, userSelected]);
+
+  useEffect(() => {
+    return () => {
       if (arrowTimeout) clearTimeout(arrowTimeout);
-  
-      const timeout = setTimeout(() => {
-        setShowArrows(false);
-      }, 3000);
-  
-      setArrowTimeout(timeout);
     };
-  
-    const changeMainImage = (direction) => {
-      if (!car?.images?.length) return;
-  
-      setMainImageIndex(prev => {
-        if (direction === 'left') {
-          return prev === 0 ? car.images.length - 1 : prev - 1;
-        }
-        return prev === car.images.length - 1 ? 0 : prev + 1;
-      });
-      setUserSelected(true);
-      setTimeout(() => setUserSelected(false), 40000);
-    };
-  
+  }, [arrowTimeout]);
+
+  const handleImageClick = (index) => {
+    setMainImageIndex(index);
+    setUserSelected(true);
+    setTimeout(() => setUserSelected(false), 40000);
+  };
+
+  const handleTouchStart = () => {
+    setShowArrows(true);
+    if (arrowTimeout) clearTimeout(arrowTimeout);
+
+    const timeout = setTimeout(() => {
+      setShowArrows(false);
+    }, 3000);
+
+    setArrowTimeout(timeout);
+  };
+
+  const changeMainImage = (direction) => {
+    if (!car?.images?.length) return;
+
+    setMainImageIndex(prev => {
+      if (direction === 'left') {
+        return prev === 0 ? car.images.length - 1 : prev - 1;
+      }
+      return prev === car.images.length - 1 ? 0 : prev + 1;
+    });
+    setUserSelected(true);
+    setTimeout(() => setUserSelected(false), 40000);
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando automóvil...</div>;
   if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
@@ -266,7 +273,26 @@ export const CarDetails = () => {
                 </button>
               </div>
               <h1 className="text-2xl font-bold mb-2">{car.title}</h1>
-              <p className="text-lg font-semibold text-gray-600 mb-4">{car.code}</p>
+              <p className="text-lg font-semibold text-gray-600 mb-4">{car.codigo}</p>
+
+              {/* Availability Status */}
+              <div className="mb-4">
+                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                  car.disponible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  {car.disponible ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Disponible</span>
+                    </>
+                  ) : (
+                    <>
+                      <X className="w-4 h-4" />
+                      <span>No Disponible</span>
+                    </>
+                  )}
+                </span>
+              </div>
 
               {location && (
                 <div className="flex items-center gap-2 text-gray-600 mb-4">
@@ -277,23 +303,32 @@ export const CarDetails = () => {
 
               <div className="text-3xl font-bold mb-6 flex items-center text-blue-600">
                 <DollarSign size={28} />
-                <span>{car.price.toLocaleString()}</span>
+                <span>{car.price?.toLocaleString()}</span>
               </div>
 
+              {/* Extended Car Details Grid */}
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <CarDetail icon={<Car />} label="Marca" value={car.brand} />
                 <CarDetail icon={<Car />} label="Modelo" value={car.model} />
-                <CarDetail icon={<Car />} label="Año" value={car.year} />
-                <CarDetail icon={<Star />} label="Kilómetros" value={car.kilometers} />
+                <CarDetail icon={<Car />} label="Tipo" value={car.car} />
+                <CarDetail icon={<Gauge />} label="Kilometraje" value={car.kilometer} />
+                <CarDetail icon={<Palette />} label="Color" value={car.color} />
+                <CarDetail icon={<Calendar />} label="Año de registro" value={car.registrationYear} />
+                <CarDetail icon={<Cog />} label="Transmisión" value={car.change} />
+                <CarDetail icon={<Car />} label="Tracción" value={car.tractionType} />
+                <CarDetail icon={<Fuel />} label="Combustible" value={car.fuel} />
+                <CarDetail icon={<DoorOpen />} label="Puertas" value={car.door} />
+                <CarDetail icon={<Users />} label="Capacidad" value={`${car.place} personas`} />
               </div>
 
+              {/* Contact and Share Buttons */}
               <div className="space-y-3">
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 py-3">
                   Contactar al vendedor
                 </Button>
 
                 <a
-                  href={`https://wa.me/573160420188?text=Hola, estoy interesado en el automóvil ${car.code}`}
+                  href={`https://wa.me/573160420188?text=Hola, estoy interesado en el automóvil ${car.codigo}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block"
@@ -316,7 +351,7 @@ export const CarDetails = () => {
           </div>
         </div>
 
-        {/* Description and Features */}
+        {/* Description Section */}
         <div className="bg-white rounded-xl p-6 shadow-sm mt-6">
           <h2 className="text-xl font-bold mb-4">Descripción</h2>
           <p className="text-gray-700 leading-relaxed">{car.description}</p>

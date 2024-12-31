@@ -93,6 +93,16 @@ const Header = () => {
                 HERRAMIENTAS
               </Link>
             </li>
+            <li className="navItem">
+              <Link
+                to="/blog"
+                className={`navLink ${
+                  location.pathname === '/blog' ? 'active' : ''
+                }`}
+              >
+              + DE MS DE VALOR 
+              </Link>
+            </li>
             {isAuthenticated ? (
               <>
                 <li className="navItem">

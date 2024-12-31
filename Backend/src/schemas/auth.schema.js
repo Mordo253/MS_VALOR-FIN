@@ -24,3 +24,28 @@ export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
+
+export const changePasswordSchema = z.object({
+  oldPassword: z
+    .string({
+      required_error: "Current password is required",
+    })
+    .min(6, {
+      message: "Current password must be at least 6 characters",
+    }),
+  newPassword: z
+    .string({
+      required_error: "New password is required",
+    })
+    .min(6, {
+      message: "New password must be at least 6 characters",
+    })
+    .refine((val, ctx) => {
+      if (val === ctx.parent.oldPassword) {
+        return false;
+      }
+      return true;
+    }, {
+      message: "New password must be different from the old password",
+    }),
+});

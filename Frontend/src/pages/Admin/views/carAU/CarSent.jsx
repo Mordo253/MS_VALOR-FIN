@@ -1,18 +1,19 @@
 import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useVehicles } from "../../../../context/CarContext";
-import { useAuth } from "../../../../context/AuthContext";  // Importamos el contexto de autenticación
+import { useAuth } from "../../../../context/AuthContext";
 import PropertyImg from "../propertyAU/Property/PropertyImg";
 import CarForm from "./CarFom";
 
 const CarSent = () => {
   const navigate = useNavigate();
   const { createVehicle } = useVehicles();
-  const { user, isAuthenticated } = useAuth();  // Accedemos al estado de autenticación desde el contexto
+  const { user, isAuthenticated } = useAuth();
 
   const [formData, setFormData] = useState({
     title: "",
     car: "",
+    price: 0, // Agregado
     kilometer: "",
     color: "",
     registrationYear: "",
@@ -49,8 +50,9 @@ const CarSent = () => {
     e.preventDefault();
 
     try {
-      if (!formData.title || !formData.car || !formData.brand || !formData.model) {
-        throw new Error("Por favor complete todos los campos requeridos");
+      // Validaciones de campos
+      if (!formData.title || !formData.car || !formData.brand || !formData.model || !formData.price) {
+        throw new Error("Por favor, complete todos los campos requeridos.");
       }
 
       if (images.length === 0) {
@@ -60,53 +62,49 @@ const CarSent = () => {
       setIsSubmitting(true);
       setError(null);
 
+      // Preparando los datos para enviar
       const dataToSend = {
         ...formData,
         price: Number(formData.price) || 0,
         kilometer: Number(formData.kilometer) || 0,
         registrationYear: Number(formData.registrationYear) || 0,
         door: Number(formData.door) || 0,
-        model: Number(formData.model) || 0,
+        place: Number(formData.place) || 0,
         tractionType: formData.tractionType,
-        car: formData.car,
-        images: images.map(img => ({
-          public_id: img.public_id,
-          secure_url: img.secure_url,
-          file: img.file,
-          resource_type: img.resource_type,
+        disponible: Boolean(formData.disponible),
+        images: images.map((img) => ({
+          public_id: img.public_id || null,
+          secure_url: img.secure_url || null,
+          file: img.file || null,
+          resource_type: img.resource_type || "image",
         })),
         imagesToDelete,
-        disponible: Boolean(formData.disponible),
-        updatedAt: new Date().toISOString(),
       };
 
-      // Verificamos si el usuario está autenticado y obtenemos el token desde el contexto
       if (!isAuthenticated) {
         throw new Error("No estás autenticado. Por favor, inicia sesión.");
       }
 
-      // Usamos el token del contexto de autenticación (se espera que esté en las cookies ya)
-      const token = user?.token;  // Asegúrate de que el token esté disponible en el objeto 'user'
+      const token = user?.token;
       if (!token) {
         throw new Error("No se encontró un token de autenticación.");
       }
 
-      // Enviar la solicitud a la API con el token en los encabezados
+      // Enviando la solicitud para crear el vehículo
       const response = await createVehicle(dataToSend, {
         headers: {
-          Authorization: `Bearer ${token}`, // Incluir el token en los encabezados
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
-      if (response?.data) {
+      if (response?.success) {
         setSuccess(true);
         setImages([]);
         setImagesToDelete([]);
-        setError(null);
         setTimeout(() => navigate("/cars"), 1500);
       } else {
-        throw new Error("No se recibió respuesta del servidor.");
+        throw new Error(response?.error || "No se pudo registrar el vehículo.");
       }
     } catch (err) {
       setError(err.message || "Error al registrar el vehículo.");

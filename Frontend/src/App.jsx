@@ -6,7 +6,7 @@ import { PropertyDetails } from "./pages/PropertyPage/PropertyDetail";
 import { PropertyList } from "./pages/PropertyPage/PropertyList";
 import { VehicleProvider } from "./context/CarContext";
 import { CarPage } from "./pages/CarPage/CarPage";
-import { CarDetails } from "./pages/CarPage/CarDetail";
+import CarDetails  from "./pages/CarPage/CarDetail";
 import { CarList } from "./pages/CarPage/CarList";
 import Header from './components/Header/Header';
 import { AuthProvider } from "./context/AuthContext";
@@ -18,7 +18,10 @@ import { Admin } from "./pages/Admin/layout/Admin";
 import { Footer } from "./components/Footer/Footer";
 import { Indicador } from './components/ecommerI/EcommerI';
 import './App.css';
-
+import { BlogPage } from './pages/BlogPage/BlogPage';
+import { PostProvider } from './context/PostContext';
+import PostsList from './pages/BlogPage/PostList';
+import PostDetails from './pages/BlogPage/PostDetails';
 // Componente mejorado para manejar el scroll
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -83,6 +86,9 @@ const AppContent = () => {
           <Route path="/cars-list" element={<PageWrapper><CarList /></PageWrapper>} />
           <Route path="/cars/:id" element={<PageWrapper><CarDetails /></PageWrapper>} />
           <Route path="/tools" element={<PageWrapper><ToolsPage /></PageWrapper>} />
+          <Route path="/blog" element={<PageWrapper><BlogPage /></PageWrapper>} />
+          <Route path="/posts-list" element={<PageWrapper><PostsList /></PageWrapper>} />
+          <Route path="/posts/:slug" element={<PageWrapper><PostDetails/></PageWrapper>} />
           <Route element={<ProtectedRoute />}>
             <Route path="/admin/*" element={<PageWrapper><Admin /></PageWrapper>} />
           </Route>
@@ -104,9 +110,11 @@ function App() {
       <AuthProvider>
         <PropertyProvider>
           <VehicleProvider>
-            <main className="app-main">
-              <AppContent />
-            </main>
+            <PostProvider>
+              <main className="app-main">
+                <AppContent />
+              </main>
+            </PostProvider>
           </VehicleProvider>
         </PropertyProvider>
       </AuthProvider>

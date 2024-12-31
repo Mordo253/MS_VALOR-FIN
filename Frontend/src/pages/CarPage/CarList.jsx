@@ -74,14 +74,14 @@ export const CarList = () => {
       <div className="pt-16 md:pt-20 lg:pt-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto bg-yellow-50 rounded-lg md:rounded-2xl lg:rounded-3xl overflow-hidden">
           <div className="p-4 sm:p-6 lg:p-8">
-            {/* <SearchbarC
+            <SearchbarC
               setSearchTerm={setSearchTerm}
               setFilters={handleSetFilters}
               brands={uniqueBrands}
               fuelTypes={uniqueFuelTypes}
               minPrice={minPrice}
               maxPrice={maxPrice}
-            /> */}
+            />
 
             <div className="mt-6 md:mt-8">
               {filteredVehicles.length > 0 ? (
