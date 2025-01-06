@@ -127,39 +127,28 @@ export const logout = async (req, res) => {
   return res.sendStatus(200);
 };
 
-// Función para cambiar la contraseña
 export const changePassword = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   
   try {
-    // Obtener el usuario del token (el usuario ya está en req.user debido al middleware 'auth')
     const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
+    console.log('Usuario ID:', req.user.id);
+    console.log('Usuario encontrado:', !!user);
+    console.log('Contraseña actual:', oldPassword);
 
-    // Verificar si la contraseña actual coincide con la almacenada
-    const isMatch = await bcrypt.compare(oldPassword, user.password);
-    if (!isMatch) {
+    const isValid = await user.comparePassword(oldPassword);
+    console.log('Contraseña válida:', isValid);
+
+    if (!isValid) {
       return res.status(400).json({ message: "Contraseña actual incorrecta" });
     }
 
-    // Verificar si la nueva contraseña es diferente a la actual
-    if (oldPassword === newPassword) {
-      return res.status(400).json({ message: "La nueva contraseña no puede ser la misma que la anterior" });
-    }
-
-    // Hashear la nueva contraseña
-    const newPasswordHash = await bcrypt.hash(newPassword, 10);
-
-    // Actualizar la contraseña en la base de datos
-    user.password = newPasswordHash;
+    user.password = newPassword;
     await user.save();
 
     return res.status(200).json({ message: "Contraseña cambiada con éxito" });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Hubo un error al cambiar la contraseña" });
+    console.error('Error:', error);
+    return res.status(500).json({ message: error.message });
   }
 };
-

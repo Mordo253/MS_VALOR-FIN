@@ -1,8 +1,8 @@
-// components/Indicador.js
 import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { FRONTEND_URL } from "../../config";
 
+// Función para formatear precios con formato colombiano y 2 decimales
 const formatPrice = (value) => {
   if (value === null || value === undefined) return '-';
   return Number(value).toLocaleString('es-CO', { 
@@ -11,6 +11,7 @@ const formatPrice = (value) => {
   });
 };
 
+// Componente para mostrar el cambio de precio con flecha y porcentaje
 const PriceChange = ({ currentPrice, previousPrice, hideArrow = false }) => {
   if (!previousPrice || !currentPrice) return null;
   
@@ -29,6 +30,7 @@ const PriceChange = ({ currentPrice, previousPrice, hideArrow = false }) => {
   );
 };
 
+// Componente para mostrar un elemento financiero individual
 const FinancialItem = ({ symbol, name, price, previousPrice }) => {
   const displaySymbol = symbol.includes('USD') || symbol.includes('EUR') ? '$' : 
                        symbol.includes('IPC') || symbol.includes('TASA') || symbol.includes('DTF') ? '%' : '';
@@ -49,46 +51,78 @@ const FinancialItem = ({ symbol, name, price, previousPrice }) => {
   );
 };
 
+// Componente principal Indicador
 export const Indicador = () => {
+  // Estados del componente
   const [financialData, setFinancialData] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Efecto para detectar si es dispositivo móvil
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
-    handleResize();
+    handleResize(); // Verificación inicial
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const shouldUpdate = () => {
+  // Función para obtener la ventana de tiempo actual
+  const getCurrentWindow = () => {
     const now = new Date();
     const hour = now.getHours();
     const minute = now.getMinutes();
     
-    return (
-      (hour === 8 && minute < 30) || 
-      (hour === 12 && minute < 30)
-    );
+    if (hour === 8 && minute < 30) return '8AM';
+    if (hour === 12 && minute < 35) return '12PM';
+    return null;
   };
 
+  // Función para determinar si se debe realizar una actualización
+  const shouldUpdate = () => {
+    const currentWindow = getCurrentWindow();
+    if (!currentWindow) return false;
+
+    // Obtener la última ventana donde se hizo scraping
+    const lastScrapingWindow = localStorage.getItem('lastScrapingWindow');
+    const lastScrapingDate = localStorage.getItem('lastScrapingDate');
+
+    // Si no hay registro previo, permitir el scraping
+    if (!lastScrapingWindow || !lastScrapingDate) return true;
+
+    // Verificar si estamos en un nuevo día
+    const today = new Date().toDateString();
+    if (lastScrapingDate !== today) return true;
+
+    // Si estamos en el mismo día, verificar si es una ventana diferente
+    return lastScrapingWindow !== currentWindow;
+  };
+
+  // Función para obtener los datos financieros
   const fetchData = async () => {
     try {
       setError(null);
       
       if (shouldUpdate()) {
         setIsUpdating(true);
+        
+        // Registrar el intento de scraping antes de hacer la petición
+        const currentWindow = getCurrentWindow();
+        const today = new Date().toDateString();
+        localStorage.setItem('lastScrapingWindow', currentWindow);
+        localStorage.setItem('lastScrapingDate', today);
+        
         const response = await fetch(`${FRONTEND_URL}/api/update-data`, {
           method: 'POST'
         });
         
-        if (!response.ok) throw new Error('Error en la actualizaciÃ³n');
+        if (!response.ok) throw new Error('Error en la actualización');
         
         const result = await response.json();
         setFinancialData(result.data);
         setLastUpdate(new Date());
+        console.log('Scraping realizado en ventana:', currentWindow);
       } else {
         const response = await fetch(`${FRONTEND_URL}/api/financial-data`);
         if (!response.ok) throw new Error('Error al obtener datos');
@@ -105,18 +139,23 @@ export const Indicador = () => {
     }
   };
 
+  // Efecto para iniciar la obtención de datos y configurar el intervalo
   useEffect(() => {
-    fetchData();
+    fetchData(); // Obtención inicial de datos
     
+    // Configurar intervalo para verificar actualizaciones cada minuto
     const checkInterval = setInterval(() => {
       fetchData();
-    }, 60000); // Verificar cada minuto
+    }, 60000); // 60000 ms = 1 minuto
 
+    // Limpiar intervalo al desmontar
     return () => clearInterval(checkInterval);
   }, []);
 
+  // Ordenar datos por símbolo
   const sortedData = [...financialData].sort((a, b) => a.symbol.localeCompare(b.symbol));
 
+  // Renderizado del componente
   return (
     <>
       <div className="fixed top-0 left-0 right-0 bg-gray-900 text-white h-12 overflow-hidden z-[1002]">
@@ -142,7 +181,7 @@ export const Indicador = () => {
         </div>
       </div>
 
-      <style>{`
+      <style jsx>{`
         .ticker-track {
           animation: ticker 30s linear infinite;
           will-change: transform;

@@ -28,7 +28,7 @@ export const BlogHero = () => {
 
             {/* Description */}
             <p className="text-base sm:text-lg text-gray-200 mb-8 max-w-xl mx-auto leading-relaxed">
-              Explora ideas, reflexiones y recursos únicos en mi blog personal. ¡Descubre algo nuevo en cada publicación!
+              Explora ideas, reflexiones y recursos únicos en nuestro blog MS De Valor. ¡Descubre algo nuevo en cada publicación!
             </p>
 
             {/* CTA Button */}

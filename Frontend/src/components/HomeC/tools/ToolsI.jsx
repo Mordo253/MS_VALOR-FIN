@@ -10,12 +10,10 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-// Función para formatear números con puntos de separación
 const formatNumber = (value) => {
   return value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
-// Función para desformatear números (quitar puntos)
 const unformatNumber = (value) => {
   return value.replace(/\./g, "");
 };
@@ -39,8 +37,6 @@ const Modal = ({ isOpen, onClose, children, isNotarial }) => {
 
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      // Eliminado scrollIntoView para evitar el desplazamiento no deseado
-      // modalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleEscape);
     } else {
@@ -64,8 +60,12 @@ const Modal = ({ isOpen, onClose, children, isNotarial }) => {
     >
       <div 
         ref={contentRef}
-        className={`relative bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto z-[10000] transform transition-all duration-300 ease-in-out ${
+        className={`relative bg-white rounded-lg shadow-xl w-full max-h-[90vh] overflow-y-auto z-[10000] transform transition-all duration-300 ease-in-out ${
           isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        } ${
+          isNotarial 
+            ? 'max-w-4xl' 
+            : 'max-w-md'  
         }`}
       >
         <div className="sticky top-0 bg-white p-4 border-b border-gray-200 flex justify-between items-center">
@@ -79,7 +79,7 @@ const Modal = ({ isOpen, onClose, children, isNotarial }) => {
             <X size={24} />
           </button>
         </div>
-        <div className="p-6">
+        <div className={`p-6 ${isNotarial ? 'px-8' : ''}`}>
           {children}
         </div>
       </div>
@@ -87,15 +87,13 @@ const Modal = ({ isOpen, onClose, children, isNotarial }) => {
   );
 };
 
-
 const CreditSimulator = ({ onClose }) => {
   const [amount, setAmount] = useState('');
-  const [term, setTerm] = useState(120); // Valor inicial cambiado a un punto medio más razonable
+  const [term, setTerm] = useState(120);
   const [rateType, setRateType] = useState('fixed');
   const [customRate, setCustomRate] = useState('');
   const [result, setResult] = useState(null);
 
-  // Formatea el número como moneda colombiana
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', { 
       style: 'currency', 
@@ -104,7 +102,6 @@ const CreditSimulator = ({ onClose }) => {
     }).format(value);
   };
 
-  // Maneja los cambios en el monto del crédito
   const handleAmountChange = (e) => {
     const value = e.target.value.replace(/\D/g, '');
     if (value === '' || parseInt(value, 10) >= 0) {
@@ -112,7 +109,6 @@ const CreditSimulator = ({ onClose }) => {
     }
   };
 
-  // Maneja los cambios en el plazo
   const handleTermChange = (e) => {
     const value = e.target.value.replace(/\D/g, '');
     if (value === '' || value === '0') {
@@ -127,7 +123,6 @@ const CreditSimulator = ({ onClose }) => {
     }
   };
 
-  // Maneja los cambios en la tasa personalizada
   const handleCustomRateChange = (e) => {
     const value = e.target.value;
     if (value === '' || (parseFloat(value) >= 0 && !value.startsWith('-'))) {
@@ -135,14 +130,12 @@ const CreditSimulator = ({ onClose }) => {
     }
   };
 
-  // Calcula el pago mensual
   const calculateMonthlyPayment = (principal, rate, months) => {
     const monthlyRate = rate / 100;
     if (monthlyRate === 0) return principal / months;
     return (principal * monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
   };
 
-  // Maneja la simulación
   const handleSimulate = () => {
     if (!amount || amount < 1000000 || amount > 500000000) {
       alert('Por favor ingrese un monto válido entre $1,000,000 y $500,000,000');
@@ -257,7 +250,6 @@ const CreditSimulator = ({ onClose }) => {
   );
 };
 
-
 const InterestRateConverter = ({ onClose }) => {
   const [inputRate, setInputRate] = useState('');
   const [inputType, setInputType] = useState('annual');
@@ -364,7 +356,7 @@ export const ToolsI = () => {
   const toolCards = [
     {
       icon: <Calculator className="w-8 h-8 text-indigo-600" />,
-      title: "Simulador de Crédito",
+      title: "Simulador de CrÃ©dito",
       onClick: () => setIsSimulatorOpen(true),
     },
     {
@@ -379,18 +371,15 @@ export const ToolsI = () => {
     }
   ];
 
-  // Manejar el scroll y focus cuando se abre un modal
   useEffect(() => {
     const handleModalOpen = (isOpen) => {
       if (isOpen) {
-        // Guardar la posición actual del scroll
         const scrollPosition = window.pageYOffset;
         document.body.style.overflow = 'hidden';
         document.body.style.position = 'fixed';
         document.body.style.top = `-${scrollPosition}px`;
         document.body.style.width = '100%';
       } else {
-        // Restaurar la posición del scroll
         const scrollY = document.body.style.top;
         document.body.style.position = '';
         document.body.style.top = '';
@@ -400,7 +389,6 @@ export const ToolsI = () => {
       }
     };
 
-    // Aplicar el manejo de scroll para cada modal
     handleModalOpen(isSimulatorOpen || isConverterOpen || isNotarialOpen);
 
     return () => {

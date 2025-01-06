@@ -39,13 +39,12 @@ export const changePasswordSchema = z.object({
     })
     .min(6, {
       message: "New password must be at least 6 characters",
-    })
-    .refine((val, ctx) => {
-      if (val === ctx.parent.oldPassword) {
-        return false;
-      }
-      return true;
-    }, {
-      message: "New password must be different from the old password",
     }),
+}).superRefine((data, ctx) => {
+  if (data.oldPassword === data.newPassword) {
+    ctx.addIssue({
+      path: ["newPassword"],
+      message: "New password must be different from the old password",
+    });
+  }
 });

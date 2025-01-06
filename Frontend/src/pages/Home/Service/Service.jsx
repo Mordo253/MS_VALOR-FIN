@@ -1,19 +1,20 @@
 import React, { useEffect, useRef } from 'react';
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, EffectFade } from 'swiper/modules';
+import { EffectFade, Navigation } from 'swiper/modules';
 import { Link } from "react-router-dom";
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Importaciones de estilos
 import 'swiper/css';
-import 'swiper/css/autoplay';
 import 'swiper/css/effect-fade';
+import 'swiper/css/navigation';
 import "./Service.css";
 
 // Importaciones de medios
 import video2 from "../../../assets/videoC.mp4";
 import video1 from "../../../assets/video1.mp4";
 import banner2 from "../../../assets/bannerFH.png";
+import AdvancedTooltip from '../../../components/ui/Tooltips/AdvancedTooltip';
 
 export const Service = () => {
   const swiperRef = useRef(null);
@@ -23,26 +24,44 @@ export const Service = () => {
     {
       icon: <TrendingUp className="service-icon" />,
       title: "Crédito Hipotecario y Leasing",
+      content:
+        "",
+      link:"",
     },
     {
       icon: <TrendingUp className="service-icon" />,
       title: "Crédito de vehículo",
+      content:
+        "",
+      link:"",
     },
     {
       icon: <TrendingUp className="service-icon" />,
       title: "Crédito por Libranza",
+      content:
+        "",
+      link:"",
     },
     {
       icon: <TrendingUp className="service-icon" />,
       title: "Crédito de consumo",
+      content:
+        "",
+      link:"",
     },
     {
       icon: <TrendingUp className="service-icon" />,
       title: "Seguros de autos, hogar y vida",
+      content:
+        "",
+      link:"",
     },
     {
       icon: <TrendingUp className="service-icon" />,
       title: "Servicios de logística y tramites en general",
+      content:
+        "",
+      link:"",
     },
   ];
 
@@ -51,12 +70,11 @@ export const Service = () => {
     spaceBetween: 0,
     slidesPerView: 1,
     effect: "fade",
-    autoplay: {
-      delay: 6000,
-      disableOnInteraction: false,
-      pauseOnMouseEnter: true
+    modules: [EffectFade, Navigation],
+    navigation: {
+      prevEl: '.swiper-button-prev',
+      nextEl: '.swiper-button-next',
     },
-    modules: [Autoplay, EffectFade],
     onSwiper: (swiper) => {
       swiperRef.current = swiper;
     }
@@ -94,7 +112,7 @@ export const Service = () => {
   }, []);
 
   return (
-    <section className="hero-section">
+    <section className="hero-section relative">
       <Swiper {...swiperParams} className="hero-swiper">
         {/* Slide 1: Servicios */}
         <SwiperSlide>
@@ -133,12 +151,19 @@ export const Service = () => {
                           '--index': index 
                         }}
                       >
-                        <div className="icon-wrapper">
-                          {service.icon}
-                        </div>
-                        <span className="service-label">
-                          {service.title}
-                        </span>
+                        <AdvancedTooltip
+                          title={service.title}
+                          content={service.content}
+                          theme="light"
+                          position="top"
+                        >
+                          <div className="icon-wrapper">
+                            {service.icon}
+                          </div>
+                          <span className="service-label">
+                            {service.title}
+                          </span>
+                        </AdvancedTooltip>
                       </div>
                     ))}
                   </div>
@@ -232,6 +257,14 @@ export const Service = () => {
             </div>
           </div>
         </SwiperSlide>
+
+        {/* Navigation Buttons */}
+        <div className="swiper-button-prev">
+          <ChevronLeft className="w-8 h-8 text-white" />
+        </div>
+        <div className="swiper-button-next">
+          <ChevronRight className="w-8 h-8 text-white" />
+        </div>
       </Swiper>
     </section>
   );

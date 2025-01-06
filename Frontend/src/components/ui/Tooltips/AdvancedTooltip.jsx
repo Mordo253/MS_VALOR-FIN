@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 const AdvancedTooltip = ({
   // Contenido
@@ -7,6 +8,7 @@ const AdvancedTooltip = ({
   title,
   image,
   link,
+  linkP,
   
   // Configuración
   position = 'top',
@@ -176,7 +178,12 @@ const AdvancedTooltip = ({
               />
             )}
 
-            {content && <div className="text-sm">{content}</div>}
+            {/* Aquí es donde hemos modificado para que el texto sea un párrafo */}
+            {content && (
+              <div className="whitespace-pre-line text-sm leading-relaxed">
+                {content}
+              </div>
+            )}
 
             {link && (
               <a
@@ -187,6 +194,15 @@ const AdvancedTooltip = ({
               >
                 Ver más →
               </a>
+            )}
+            {linkP && (
+              <Link
+                to={linkP}
+                className="block text-sm hover:underline mt-1"
+                rel="noopener noreferrer"
+              >
+                Ver más →
+              </Link>
             )}
           </div>
         </div>

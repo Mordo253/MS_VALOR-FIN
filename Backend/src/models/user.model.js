@@ -24,8 +24,8 @@ const userSchema = new mongoose.Schema(
 );
 
 // Método para comparar contraseñas
-userSchema.methods.comparePassword = function (candidatePassword) {
-  return bcrypt.compareSync(candidatePassword, this.password);
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
 };
 
 // Pre-hook para hashear la contraseña antes de guardarla

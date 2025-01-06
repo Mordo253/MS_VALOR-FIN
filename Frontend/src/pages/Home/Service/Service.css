@@ -1,4 +1,9 @@
-/* Service.css */
+/* Importaciones de Swiper necesarias */
+@import 'swiper/css';
+@import 'swiper/css/effect-fade';
+@import 'swiper/css/navigation';
+
+/* Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -20,6 +25,19 @@ html, body {
 .hero-section {
   @apply w-full h-screen relative overflow-hidden;
   background-color: #000;
+}
+
+/* Estilos del Swiper */
+.hero-swiper {
+  @apply w-full h-full;
+}
+
+.swiper-slide {
+  @apply w-full h-full;
+}
+
+.slide-wrapper {
+  @apply w-full h-full relative;
 }
 
 /* Contenedores */
@@ -53,13 +71,12 @@ html, body {
   flex-direction: column;
   justify-content: center;
   z-index: 3;
-  max-width: 1200px; /* Reducido de 1400px */
+  max-width: 1200px;
 }
 
 /* Tipografía ajustada */
 .main-heading {
   @apply text-white font-bold text-center mb-6;
-  /* Reducido el tamaño máximo */
   font-size: clamp(1.25rem, 2.5vw, 2.25rem);
   line-height: 1.2;
   letter-spacing: 0.5px;
@@ -70,7 +87,6 @@ html, body {
 .properties-title,
 .vehicles-title {
   @apply text-[#C5A572] font-bold text-center;
-  /* Reducido */
   font-size: clamp(1.125rem, 2vw, 1.75rem);
   line-height: 1.3;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
@@ -78,14 +94,13 @@ html, body {
 
 .properties-subtitle {
   @apply text-[#C5A572] font-bold;
-  /* Reducido */
   font-size: clamp(1rem, 1.75vw, 1.5rem);
 }
 
 /* Contenedores de contenido */
 .services-grid {
   @apply w-full mx-auto space-y-2;
-  max-width: min(85%, 700px); /* Reducido de 800px */
+  max-width: min(85%, 700px);
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(8px);
   padding: clamp(0.875rem, 1.5vw, 1.25rem);
@@ -107,7 +122,6 @@ html, body {
 
 .service-label {
   @apply text-gray-100;
-  /* Reducido */
   font-size: clamp(0.875rem, 1.15vw, 1rem);
   line-height: 1.4;
 }
@@ -131,7 +145,6 @@ html, body {
 .properties-description,
 .vehicles-description {
   @apply text-gray-100;
-  /* Reducido */
   font-size: clamp(0.875rem, 1.25vw, 1.125rem);
   line-height: 1.5;
 }
@@ -140,28 +153,78 @@ html, body {
 .cta-button {
   @apply inline-block bg-gray-900 text-white rounded-full 
          transition-all duration-300 m-4;
-  /* Reducido */
   font-size: clamp(0.75rem, 0.9vw, 0.875rem);
   padding: clamp(0.5rem, 0.75vw, 0.625rem) clamp(1.25rem, 1.5vw, 1.5rem);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Estilos de navegación Swiper */
+.swiper-button-prev,
+.swiper-button-next {
+  @apply absolute top-1/2 w-12 h-12 z-10 cursor-pointer flex items-center justify-center transition-all duration-300;
+  transform: translateY(-50%);
+  background-color: rgba(197, 165, 114, 0.2);
+  border-radius: 50%;
+  border: 2px solid rgba(197, 165, 114, 0.3);
+}
+
+.swiper-button-prev {
+  @apply left-4 lg:left-8;
+}
+
+.swiper-button-next {
+  @apply right-4 lg:right-8;
+}
+
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  background-color: rgba(197, 165, 114, 0.3);
+  border-color: rgba(197, 165, 114, 0.5);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.swiper-button-prev.swiper-button-disabled,
+.swiper-button-next.swiper-button-disabled {
+  @apply opacity-30 cursor-not-allowed;
+}
+
+/* Remover estilos por defecto de los botones de Swiper */
+.swiper-button-prev::after,
+.swiper-button-next::after {
+  display: none;
+}
+
+/* Efecto Fade */
+.swiper-fade .swiper-slide {
+  pointer-events: none;
+  transition-property: opacity;
+}
+
+.swiper-fade .swiper-slide-active {
+  pointer-events: auto;
+}
+
 /* Media Queries ajustados */
 @media (min-width: 1440px) {
   .content-container {
-    max-width: 1100px; /* Reducido para pantallas grandes */
+    max-width: 1100px;
   }
 
   .services-grid,
   .properties-content,
   .vehicles-content {
-    max-width: 650px; /* Contenido más compacto en pantallas grandes */
+    max-width: 650px;
   }
 
   .main-heading {
     max-width: 80%;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .swiper-button-prev,
+  .swiper-button-next {
+    @apply w-14 h-14;
   }
 }
 
