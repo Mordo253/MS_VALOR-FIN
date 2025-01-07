@@ -3,7 +3,7 @@ import { GOOGLE_CONFIG, SPREADSHEET_ID } from '../config.js';
 import mongoose from 'mongoose';
 
 const SHEET_RANGES = {
-    properties: 'Propiedades!A:Q',
+    properties: 'Propiedades!A:S',
     cars: 'Vehiculos!A:N',
     posts: 'Posts!A:H'
 };
@@ -52,11 +52,50 @@ export class SheetsSyncService {
         }).join('\n') || '';
     }
 
+    formatCaracteristicas(caracteristicas) {
+        if (!caracteristicas || !Array.isArray(caracteristicas)) {
+            return ['', ''];
+        }
+
+        const internas = caracteristicas
+            .filter(c => c.type === 'interna')
+            .map(c => c.name)
+            .join(', ');
+
+        const externas = caracteristicas
+            .filter(c => c.type === 'externa')
+            .map(c => c.name)
+            .join(', ');
+
+        return [internas, externas];
+    }
+
+    async findRowByCodigo(codigo, range) {
+        try {
+            const response = await this.sheetsApi.spreadsheets.values.get({
+                spreadsheetId: SPREADSHEET_ID,
+                range
+            });
+
+            const values = response.data.values || [];
+            // El código está en la segunda columna (índice 1)
+            for (let i = 0; i < values.length; i++) {
+                if (values[i][1] === codigo) {
+                    return i + 1; // +1 porque las filas en Sheets empiezan en 1
+                }
+            }
+            return null;
+        } catch (error) {
+            console.error('Error buscando fila:', error);
+            return null;
+        }
+    }
+
     async syncToSheets(document, collectionName) {
         try {
             console.log(`🔄 Sincronizando documento de ${collectionName}:`, {
                 id: document._id,
-                hoja: this.ranges[collectionName]
+                codigo: document.codigo
             });
 
             let rowData;
@@ -64,6 +103,9 @@ export class SheetsSyncService {
 
             switch (collectionName) {
                 case 'properties':
+                    const [caracteristicasInternas, caracteristicasExternas] = 
+                        this.formatCaracteristicas(document.caracteristicas);
+                    
                     rowData = [
                         timestamp,
                         document.codigo || '',
@@ -81,7 +123,9 @@ export class SheetsSyncService {
                         document.estado || '',
                         document.disponible ? 'Disponible' : 'No disponible',
                         document.description || '',
-                        this.formatCloudinaryUrls(document.images)
+                        this.formatCloudinaryUrls(document.images),
+                        caracteristicasInternas,
+                        caracteristicasExternas
                     ];
                     break;
 
@@ -128,17 +172,38 @@ export class SheetsSyncService {
                 return;
             }
 
-            const result = await this.sheetsApi.spreadsheets.values.append({
-                spreadsheetId: SPREADSHEET_ID,
-                range: range,
-                valueInputOption: 'RAW',
-                resource: { values: [rowData] }
-            });
+            // Buscar fila existente por código
+            const existingRow = document.codigo ? 
+                await this.findRowByCodigo(document.codigo, range) : null;
 
-            console.log(`✅ Datos sincronizados en ${range}:`, {
-                documentId: document._id,
-                updatedRange: result.data.updates?.updatedRange
-            });
+            if (existingRow) {
+                // Actualizar fila existente
+                const updateRange = `${range.split('!')[0]}!A${existingRow}`;
+                await this.sheetsApi.spreadsheets.values.update({
+                    spreadsheetId: SPREADSHEET_ID,
+                    range: updateRange,
+                    valueInputOption: 'RAW',
+                    resource: { values: [rowData] }
+                });
+
+                console.log(`✅ Datos actualizados en fila ${existingRow}:`, {
+                    documentId: document._id,
+                    codigo: document.codigo
+                });
+            } else {
+                // Insertar nueva fila
+                await this.sheetsApi.spreadsheets.values.append({
+                    spreadsheetId: SPREADSHEET_ID,
+                    range: range,
+                    valueInputOption: 'RAW',
+                    resource: { values: [rowData] }
+                });
+
+                console.log(`✅ Nueva fila insertada:`, {
+                    documentId: document._id,
+                    codigo: document.codigo
+                });
+            }
 
         } catch (error) {
             console.error(`❌ Error sincronizando ${collectionName}:`, error);

@@ -6,7 +6,7 @@ import { PropertyDetails } from "./pages/PropertyPage/PropertyDetail";
 import { PropertyList } from "./pages/PropertyPage/PropertyList";
 import { VehicleProvider } from "./context/CarContext";
 import { CarPage } from "./pages/CarPage/CarPage";
-import CarDetails  from "./pages/CarPage/CarDetail";
+import CarDetails from "./pages/CarPage/CarDetail";
 import { CarList } from "./pages/CarPage/CarList";
 import Header from './components/Header/Header';
 import { AuthProvider } from "./context/AuthContext";
@@ -22,23 +22,18 @@ import { BlogPage } from './pages/BlogPage/BlogPage';
 import { PostProvider } from './context/PostContext';
 import PostsList from './pages/BlogPage/PostList';
 import PostDetails from './pages/BlogPage/PostDetails';
-// Componente mejorado para manejar el scroll
+
+// Componente para manejar el scroll al inicio
 const ScrollToTop = () => {
   const { pathname } = useLocation();
 
-  // Usar useLayoutEffect para ejecutar antes del render
   useLayoutEffect(() => {
     const scrollToTopSmooth = () => {
-      // Primero desactivamos el scroll suave
       document.documentElement.style.scrollBehavior = 'auto';
       document.body.style.scrollBehavior = 'auto';
-
-      // Forzar el scroll al inicio en todos los elementos relevantes
       window.scrollTo(0, 0);
       document.documentElement.scrollTo(0, 0);
       document.body.scrollTo(0, 0);
-
-      // Reactivar el scroll suave después de un pequeño delay
       setTimeout(() => {
         document.documentElement.style.scrollBehavior = 'smooth';
         document.body.style.scrollBehavior = 'smooth';
@@ -47,7 +42,6 @@ const ScrollToTop = () => {
 
     scrollToTopSmooth();
 
-    // Asegurarnos de que el scroll se mantiene arriba
     const timeoutId = setTimeout(scrollToTopSmooth, 100);
 
     return () => clearTimeout(timeoutId);
@@ -56,7 +50,7 @@ const ScrollToTop = () => {
   return null;
 };
 
-// Componente de página wrapper
+// Componente para envolver páginas
 const PageWrapper = ({ children }) => {
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -76,7 +70,6 @@ const AppContent = () => {
       <Header />
       <div className="content-wrapper">
         <Routes>
-          {/* Envolver cada ruta con PageWrapper */}
           <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
           <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
           <Route path="/properties" element={<PageWrapper><PropertyPage /></PageWrapper>} />
@@ -88,10 +81,13 @@ const AppContent = () => {
           <Route path="/tools" element={<PageWrapper><ToolsPage /></PageWrapper>} />
           <Route path="/blog" element={<PageWrapper><BlogPage /></PageWrapper>} />
           <Route path="/posts-list" element={<PageWrapper><PostsList /></PageWrapper>} />
-          <Route path="/posts/:slug" element={<PageWrapper><PostDetails/></PageWrapper>} />
+          <Route path="/posts/:slug" element={<PageWrapper><PostDetails /></PageWrapper>} />
           <Route element={<ProtectedRoute />}>
             <Route path="/admin/*" element={<PageWrapper><Admin /></PageWrapper>} />
           </Route>
+
+          {/* Ruta para manejar páginas no encontradas */}
+          <Route path="*" element={<PageWrapper><HomePage /></PageWrapper>} />
         </Routes>
       </div>
       {!isAdminRoute && <Footer />}
@@ -100,7 +96,6 @@ const AppContent = () => {
 };
 
 function App() {
-  // Asegurar scroll al inicio cuando se monta la aplicación
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);

@@ -3,8 +3,9 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectFade, Navigation } from 'swiper/modules';
 import { Link } from "react-router-dom";
 import { TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import AdvancedTooltip from '../../../components/ui/Tooltips/AdvancedTooltip';
 
-// Importaciones de estilos
+// Importaciones CSS
 import 'swiper/css';
 import 'swiper/css/effect-fade';
 import 'swiper/css/navigation';
@@ -14,97 +15,65 @@ import "./Service.css";
 import video2 from "../../../assets/videoC.mp4";
 import video1 from "../../../assets/video1.mp4";
 import banner2 from "../../../assets/bannerFH.png";
-import AdvancedTooltip from '../../../components/ui/Tooltips/AdvancedTooltip';
 
 export const Service = () => {
   const swiperRef = useRef(null);
 
-  // Lista de servicios
   const services = [
     {
-      icon: <TrendingUp className="service-icon" />,
+      icon: <TrendingUp className="service-icon text-[#C5A572] w-6 h-6" />,
       title: "Crédito Hipotecario y Leasing",
-      content:
-        "",
-      link:"",
+      content: "Asesoramiento personalizado para obtener tu vivienda ideal. Analizamos las mejores opciones de financiamiento y te guiamos en todo el proceso de adquisición.",
     },
     {
-      icon: <TrendingUp className="service-icon" />,
+      icon: <TrendingUp className="service-icon text-[#C5A572] w-6 h-6" />,
       title: "Crédito de vehículo",
-      content:
-        "",
-      link:"",
+      content: "Facilitamos el proceso de financiación para tu vehículo nuevo o usado. Evaluamos las mejores tasas y condiciones según tu perfil.",
     },
     {
-      icon: <TrendingUp className="service-icon" />,
+      icon: <TrendingUp className="service-icon text-[#C5A572] w-6 h-6" />,
       title: "Crédito por Libranza",
-      content:
-        "",
-      link:"",
+      content: "Obtén financiamiento con descuento directo de nómina. Tasas preferenciales y proceso simplificado para empleados y pensionados.",
     },
     {
-      icon: <TrendingUp className="service-icon" />,
+      icon: <TrendingUp className="service-icon text-[#C5A572] w-6 h-6" />,
       title: "Crédito de consumo",
-      content:
-        "",
-      link:"",
+      content: "Soluciones financieras flexibles para tus necesidades personales. Evaluamos tu capacidad de pago y ofrecemos las mejores condiciones.",
     },
     {
-      icon: <TrendingUp className="service-icon" />,
+      icon: <TrendingUp className="service-icon text-[#C5A572] w-6 h-6" />,
       title: "Seguros de autos, hogar y vida",
-      content:
-        "",
-      link:"",
+      content: "Protección integral para ti y tus bienes. Comparamos diferentes opciones para encontrar la cobertura que mejor se ajuste a tus necesidades.",
     },
     {
-      icon: <TrendingUp className="service-icon" />,
+      icon: <TrendingUp className="service-icon text-[#C5A572] w-6 h-6" />,
       title: "Servicios de logística y tramites en general",
-      content:
-        "",
-      link:"",
+      content: "Gestión integral de trámites y procesos logísticos. Te ayudamos con la documentación y requisitos necesarios para tus operaciones.",
     },
   ];
 
-  // Configuración del Swiper
-  const swiperParams = {
-    spaceBetween: 0,
-    slidesPerView: 1,
-    effect: "fade",
-    modules: [EffectFade, Navigation],
-    navigation: {
-      prevEl: '.swiper-button-prev',
-      nextEl: '.swiper-button-next',
-    },
-    onSwiper: (swiper) => {
-      swiperRef.current = swiper;
-    }
-  };
-
-  // Manejo de efectos y optimizaciones
   useEffect(() => {
     const videos = document.querySelectorAll('video');
     
-    // Optimización de reproducción de video
-    videos.forEach(video => {
-      video.play().catch(function(error) {
-        console.log("Video autoplay prevented:", error);
-      });
+    videos.forEach((video, index) => {
+      if (index !== 0) {
+        video.play().catch(error => console.log("Video autoplay prevented:", error));
+      }
     });
 
-    // Manejo de visibilidad de página
     const handleVisibilityChange = () => {
-      videos.forEach(video => {
-        if (document.hidden) {
-          video.pause();
-        } else {
-          video.play().catch(() => {});
+      videos.forEach((video, index) => {
+        if (index !== 0) {
+          if (document.hidden) {
+            video.pause();
+          } else {
+            video.play().catch(() => {});
+          }
         }
       });
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    // Limpieza
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       videos.forEach(video => video.pause());
@@ -113,7 +82,20 @@ export const Service = () => {
 
   return (
     <section className="hero-section relative">
-      <Swiper {...swiperParams} className="hero-swiper">
+      <Swiper
+        spaceBetween={0}
+        slidesPerView={1}
+        effect="fade"
+        modules={[EffectFade, Navigation]}
+        navigation={{
+          prevEl: '.swiper-button-prev',
+          nextEl: '.swiper-button-next',
+        }}
+        onSwiper={(swiper) => {
+          swiperRef.current = swiper;
+        }}
+        className="hero-swiper"
+      >
         {/* Slide 1: Servicios */}
         <SwiperSlide>
           <div className="slide-wrapper">
@@ -125,7 +107,6 @@ export const Service = () => {
                 loop
                 muted
                 playsInline
-                poster={banner2}
               />
               <div className="media-overlay" />
             </div>
@@ -137,34 +118,37 @@ export const Service = () => {
                 </h1>
                 
                 <div className="services-content">
-                  <h2 className="services-title">
+                  <h2 className="services-title mb-6">
                     ASESORIAS EN:
                   </h2>
                   
                   <div className="services-grid">
                     {services.map((service, index) => (
-                      <div 
-                        key={index} 
-                        className="service-item"
-                        style={{ 
-                          animationDelay: `${index * 0.1}s`,
-                          '--index': index 
-                        }}
+                      <AdvancedTooltip
+                        key={index}
+                        title={service.title}
+                        content={service.content}
+                        position="top"
+                        delay={200}
+                        theme="gold"
                       >
-                        <AdvancedTooltip
-                          title={service.title}
-                          content={service.content}
-                          theme="light"
-                          position="top"
+                        <div 
+                          className="service-item group flex items-center gap-3 p-2 rounded-lg transition-all duration-300 hover:bg-white/5"
+                          style={{ 
+                            animationDelay: `${index * 0.1}s`,
+                            '--index': index 
+                          }}
                         >
-                          <div className="icon-wrapper">
-                            {service.icon}
-                          </div>
-                          <span className="service-label">
-                            {service.title}
-                          </span>
-                        </AdvancedTooltip>
-                      </div>
+                          <Link to="/posts-list">
+                            <div className="icon-wrapper transition-transform duration-300 group-hover:scale-110">
+                              {service.icon}
+                            </div>
+                            <span className="service-label text-gray-100 group-hover:text-[#C5A572] transition-colors duration-300">
+                              {service.title}
+                            </span>
+                          </Link>
+                        </div>
+                      </AdvancedTooltip>
                     ))}
                   </div>
 
@@ -172,7 +156,7 @@ export const Service = () => {
                     href="https://wa.me/573160420188?text=Hola MS DE VALOR. 👋"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="cta-button"
+                    className="cta-button hover:bg-[#C5A572] hover:text-gray-900 transition-all duration-300"
                   >
                     VER MÁS
                   </a>
@@ -211,7 +195,7 @@ export const Service = () => {
                   <p className="properties-description">
                     PONEMOS UNA AMPLIA OFERTA DE PROPIEDADES EN TUS MANOS
                   </p>
-                  <Link to="/properties-list" className="cta-button">
+                  <Link to="/properties-list" className="cta-button hover:bg-[#C5A572] hover:text-gray-900 transition-all duration-300">
                     VER MÁS
                   </Link>
                 </div>
@@ -249,7 +233,7 @@ export const Service = () => {
                   <p className="vehicles-description">
                     El vehículo de tus Sueños
                   </p>
-                  <Link to="/cars-list" className="cta-button">
+                  <Link to="/cars-list" className="cta-button hover:bg-[#C5A572] hover:text-gray-900 transition-all duration-300">
                     VER MÁS
                   </Link>
                 </div>

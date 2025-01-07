@@ -109,10 +109,10 @@ html, body {
 }
 
 /* Items de servicio */
-.service-item {
+/* .service-item {
   @apply flex items-center gap-3 text-white transition-all duration-300;
   padding: clamp(0.375rem, 0.75vw, 0.625rem) 0;
-}
+} */
 
 .icon-wrapper {
   @apply flex-shrink-0 text-[#C5A572];
@@ -268,9 +268,9 @@ html, body {
 
 /* Mejoras de interacción */
 @media (hover: hover) {
-  .service-item:hover {
+  /* .service-item:hover {
     transform: translateX(4px);
-  }
+  } */
 
   .cta-button:hover {
     transform: scale(1.03);

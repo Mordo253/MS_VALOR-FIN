@@ -5,28 +5,18 @@ import AdvancedTooltip from '../../ui/Tooltips/AdvancedTooltip';
 const AboutMe = () => {
   const teamMembers = [
     {
-      name: 'Juan Pérez',
-      role: 'Desarrollador Web',
-      image: 'https://via.placeholder.com/150',
-      bio: 'Especialista en React y Node.js con 5 años de experiencia',
-      github: 'https://github.com/juanperez',
-      linkedin: 'https://linkedin.com/in/juanperez',
+      name: 'Juan Fernando Gonzáles',
+      role: 'Director',
+      image: '/api/placeholder/150/150',
+      bio: 'Lorem ipsum, dolor sit amet consect',
+      WhatsApp: 'https://wa.me/573122259584?text=Hola Juan Fernando, estoy interesad@ en lo que ofrece MS De Valor',
     },
     {
-      name: 'Ana García',
-      role: 'Diseñadora Gráfica',
-      image: 'https://via.placeholder.com/150',
-      bio: 'Experta en UI/UX y diseño de marca',
-      portfolio: 'https://behance.net/anagarcia',
-      instagram: 'https://instagram.com/anagarcia',
-    },
-    {
-      name: 'Carlos López',
-      role: 'Gestor de Contenidos',
-      image: 'https://via.placeholder.com/150',
-      bio: 'Creador de contenido digital y estratega SEO',
-      blog: 'https://medium.com/@carloslopez',
-      twitter: 'https://twitter.com/carloslopez',
+      name: 'Claudia Gonzáles',
+      role: 'Asesora financiera',
+      image: '/api/placeholder/150/150',
+      bio: 'Lorem ipsum, dolor sit amet consect',
+      WhatsApp: 'https://wa.me/573160420188?text=Hola Claudia, estoy interesad@ en lo que ofrece MS De Valor',
     },
   ];
 
@@ -68,33 +58,21 @@ const AboutMe = () => {
           animate="visible"
           variants={containerVariants}
         >
-          <motion.div className="text-center" variants={itemVariants}>
-            <AdvancedTooltip
-              title="Misión"
-              content="Nuestra misión se centra en crear contenido que inspire y transforme vidas"
-              theme="light"
-              position="top"
-            >
-              <h3 className="text-2xl font-semibold text-gray-800 mb-4 cursor-help">Misión</h3>
-            </AdvancedTooltip>
-            <p className="text-gray-600">
-              Brindar contenido de calidad y auténtico para inspirar y conectar con mi audiencia.
+          <motion.div className="text-center flex flex-col" variants={itemVariants}>
+            <h3 className="text-2xl font-semibold text-gray-800 mb-4 cursor-help">Visión</h3>
+            <p className="text-gray-600 flex-grow">
+              MS de valor será la compañía de mejores negocios con nuestros aliados, con el aporte de excelentes colaboradores alineados a los valores de la organización.
             </p>
           </motion.div>
-          <motion.div className="text-center" variants={itemVariants}>
-            <AdvancedTooltip
-              title="Visión"
-              content="Aspiramos a ser líderes en innovación y calidad de contenido"
-              theme="light"
-              position="top"
-            >
-              <h3 className="text-2xl font-semibold text-gray-800 mb-4 cursor-help">Visión</h3>
-            </AdvancedTooltip>
-            <p className="text-gray-600">
-              Ser una referencia en el mundo del blogging, destacando por creatividad y valor humano.
+
+          <motion.div className="text-center flex flex-col" variants={itemVariants}>
+            <h3 className="text-2xl font-semibold text-gray-800 mb-4 cursor-help">Misión</h3>
+            <p className="text-gray-600 flex-grow">
+              Generar el mayor valor en la gestión crediticia, enfocados en la mejor experiencia del cliente interno y externo, por medio de la mejora continua de nuestros colaboradores y procesos, garantizando la mejor relación con nuestros aliados.
             </p>
           </motion.div>
-          <motion.div className="text-center" variants={itemVariants}>
+          
+          <motion.div className="text-center flex flex-col" variants={itemVariants}>
             <AdvancedTooltip
               title="Valores"
               content="Nuestros valores fundamentales guían cada decisión"
@@ -103,39 +81,40 @@ const AboutMe = () => {
             >
               <h3 className="text-2xl font-semibold text-gray-800 mb-4 cursor-help">Valores</h3>
             </AdvancedTooltip>
-            <p className="text-gray-600">
-              Autenticidad, compromiso, innovación y trabajo en equipo.
+            <p className="text-gray-600 flex-grow">
+              Aprendizaje continuo - Compromiso - Satisfacción - Responsabilidad - Respeto - Pasión
             </p>
           </motion.div>
         </motion.div>
 
-        <div>
+        <motion.div 
+          className="bg-white rounded-lg shadow-lg p-8"
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+        >
           <motion.h3
-            className="text-3xl font-bold text-center text-gray-800 mb-8"
-            initial="hidden"
-            animate="visible"
+            className="text-3xl font-bold text-center text-gray-800 mb-12"
             variants={containerVariants}
           >
             Conoce al Equipo
           </motion.h3>
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8"
-            initial="hidden"
-            animate="visible"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-12 max-w-4xl mx-auto"
             variants={containerVariants}
           >
             {teamMembers.map((member, index) => (
               <div
                 key={index}
-                className="text-center"
+                className="flex flex-col items-center p-6 bg-gray-50 rounded-xl hover:shadow-xl transition-shadow duration-300"
                 variants={itemVariants}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02 }}
               >
                 <AdvancedTooltip
                   title={member.name}
                   content={member.bio}
                   image={member.image}
-                  link={member.portfolio || member.github || member.blog}
+                  link={member.WhatsApp}
                   theme="dark"
                   position="bottom"
                   width="250px"
@@ -144,15 +123,15 @@ const AboutMe = () => {
                   <img
                     src={member.image}
                     alt={member.name}
-                    className="w-32 h-32 rounded-full mx-auto mb-4 object-cover shadow-md cursor-pointer"
+                    className="w-40 h-40 rounded-full object-cover shadow-lg cursor-pointer mb-6"
                   />
                 </AdvancedTooltip>
-                <h4 className="text-lg font-semibold text-gray-800">{member.name}</h4>
-                <p className="text-sm text-gray-600">{member.role}</p>
+                <h4 className="text-xl font-semibold text-gray-800 mb-2">{member.name}</h4>
+                <p className="text-lg text-gray-600">{member.role}</p>
               </div>
             ))}
           </motion.div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

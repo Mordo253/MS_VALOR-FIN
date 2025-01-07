@@ -62,18 +62,65 @@ const ShareButton = ({ component: ShareButtonComponent, icon: IconComponent, col
   </ShareButtonComponent>
 );
 
-const CustomShareButton = () => {
+const CustomShareButton = ({ property, mainImageUrl }) => {
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    // Actualizar los meta tags dinámicamente
+    const updateMetaTags = () => {
+      // Título
+      document.title = `${property.title} - ${property.codigo}`;
+      
+      // Meta tags Open Graph
+      let metaTags = {
+        'og:title': `${property.title} - ${property.codigo}`,
+        'og:description': property.description || `${property.tipoInmueble} en ${property.ciudad}`,
+        'og:image': mainImageUrl,
+        'og:url': window.location.href,
+        'og:type': 'website',
+        'og:site_name': 'MS DE VALOR',
+        // Twitter Card tags
+        'twitter:card': 'summary_large_image',
+        'twitter:title': `${property.title} - ${property.codigo}`,
+        'twitter:description': property.description || `${property.tipoInmueble} en ${property.ciudad}`,
+        'twitter:image': mainImageUrl
+      };
+
+      // Actualizar o crear meta tags
+      Object.entries(metaTags).forEach(([property, content]) => {
+        let element = document.querySelector(`meta[property="${property}"]`) ||
+                     document.querySelector(`meta[name="${property}"]`);
+        
+        if (!element) {
+          element = document.createElement('meta');
+          element.setAttribute(property.includes('og:') ? 'property' : 'name', property);
+          document.head.appendChild(element);
+        }
+        element.setAttribute('content', content);
+      });
+    };
+
+    updateMetaTags();
+
+    // Limpieza al desmontar
+    return () => {
+      // Remover meta tags al salir
+      const metaTags = document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]');
+      metaTags.forEach(tag => tag.remove());
+    };
+  }, [property, mainImageUrl]);
 
   const handleShare = async () => {
     const currentUrl = window.location.href;
+    const shareData = {
+      title: `${property.title} - ${property.codigo}`,
+      text: property.description || `${property.tipoInmueble} en ${property.ciudad}`,
+      url: currentUrl
+    };
 
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: document.title,
-          url: currentUrl
-        });
+        await navigator.share(shareData);
       } catch (error) {
         console.error('Error sharing:', error);
       }
@@ -326,7 +373,10 @@ export const PropertyDetails = () => {
                   </Button>
                 </a>
 
-                <CustomShareButton />
+                <CustomShareButton 
+                  property={property} 
+                  mainImageUrl={property.images[mainImageIndex]?.secure_url} 
+                />
 
                 <div className="flex justify-center gap-4 pt-4">
                   <ShareButton component={FacebookShareButton} icon={FacebookIcon} color="#1877F2" />

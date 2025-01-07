@@ -4,10 +4,8 @@ import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
 
 const SocialCTA = () => {
   const socialLinks = [
-    { icon: <FaFacebook />, label: 'Facebook', url: 'https://facebook.com' },
-    { icon: <FaTwitter />, label: 'Twitter', url: 'https://twitter.com' },
-    { icon: <FaInstagram />, label: 'Instagram', url: 'https://instagram.com' },
-    { icon: <FaLinkedin />, label: 'LinkedIn', url: 'https://linkedin.com' },
+    { icon: <FaFacebook />, label: 'Facebook', url: 'https://www.facebook.com/MSdeValor/' },
+    { icon: <FaInstagram />, label: 'Instagram', url: 'https://www.instagram.com/msdevalor/' },
   ];
 
   return (

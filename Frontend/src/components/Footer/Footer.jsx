@@ -94,8 +94,8 @@ export const Footer = () => {
             {/* Redes sociales e información */}
             <div className="contact-section">
               <div className="social-links">
-                <SocialLink href="https://facebook.com" Icon={FaFacebook} />
-                <SocialLink href="https://instagram.com" Icon={FaInstagram} />
+                <SocialLink href="https://www.facebook.com/MSdeValor/" Icon={FaFacebook} />
+                <SocialLink href="https://www.instagram.com/msdevalor/" Icon={FaInstagram} />
               </div>
               
               <div className="contact-info">
