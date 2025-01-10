@@ -32,7 +32,8 @@
     "mongoose": "^8.9.3",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.3",
-    "puppeteer": "^23.5.0",
+    "puppeteer-core": "^23.5.0",
+    "chromium": "^1.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -40,7 +41,6 @@
     "@babel/core": "^7.25.2",
     "@babel/node": "^7.25.0",
     "@babel/preset-env": "^7.25.4",
-    "nodemon": "^3.1.6",
-    "chromium": "^1.0.0"
+    "nodemon": "^3.1.6"
   }
 }

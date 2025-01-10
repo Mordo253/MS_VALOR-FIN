@@ -1,7 +1,8 @@
 // controllers/scraper.controller.js
-import puppeteer from 'puppeteer';  // Cambia a puppeteer
+import puppeteer from 'puppeteer-core';  // Usamos puppeteer-core
 import mongoose from 'mongoose';
 import FinancialData from '../models/scraping.model.js';
+import chromium from 'chromium';  // Usamos chromium para obtener el path
 
 const waitForSelector = async (page, selector, timeout = 5000) => {
   try {
@@ -12,7 +13,6 @@ const waitForSelector = async (page, selector, timeout = 5000) => {
     return false;
   }
 };
-
 const scrapers = {
   tasaUsura: async (page) => {
     console.log('Iniciando scraping de Tasa Usura');
@@ -154,9 +154,10 @@ const scrapers = {
   },
 
   uvr: async (page) => {
+    console.log('Iniciando scraping de UVR');
     await page.goto('https://www.larepublica.co/indicadores-economicos/bancos/uvr', { waitUntil: 'networkidle0' });
     await waitForSelector(page, '.price');
-    return page.evaluate(() => {
+    const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
       const change = document.querySelector('.change')?.textContent.trim();
       const percentChange = document.querySelector('.percent-change')?.textContent.trim();
@@ -170,12 +171,15 @@ const scrapers = {
         date: date
       }];
     });
+    console.log('Datos obtenidos UVR:', data);
+    return data;
   },
   
   euro: async (page) => {
+    console.log('Iniciando scraping de Euro');
     await page.goto('https://www.larepublica.co/indicadores-economicos/mercado-cambiario/euro', { waitUntil: 'networkidle0' });
     await waitForSelector(page, '.price');
-    return page.evaluate(() => {
+    const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
       const change = document.querySelector('.change')?.textContent.trim();
       const percentChange = document.querySelector('.percent-change')?.textContent.trim();
@@ -193,21 +197,21 @@ const scrapers = {
         sellPrice: sellPrice ? parseFloat(sellPrice.replace('$', '').replace(/\./g, '').replace(',', '.')) : null
       }];
     });
+    console.log('Datos obtenidos Euro:', data);
+    return data;
   }
 };
-
 const scrapeAllData = async () => {
   let browser;
   try {
     console.log('Iniciando proceso de scraping general');
-    const browser = await puppeteer.launch({
-      executablePath: '/path/to/chromium', // Cambia esta ruta
+    // Usamos el binario de Chromium proporcionado por 'chromium'
+    browser = await puppeteer.launch({
+      executablePath: chromium.path,  // Usamos el path de Chromium de la librería
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: true
     });
-    
-    
-    
+
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 });
 
@@ -228,7 +232,6 @@ const scrapeAllData = async () => {
     if (browser) await browser.close();
   }
 };
-
 const getFinancialData = async (req, res) => {
   try {
     console.log(`[${new Date().toLocaleString()}] Solicitando datos financieros`);
