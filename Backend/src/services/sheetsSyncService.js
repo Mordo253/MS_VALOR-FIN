@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 const SHEET_RANGES = {
     properties: 'Propiedades!A:S',
     cars: 'Vehiculos!A:N',
-    posts: 'Posts!A:H'
+    posts: 'Posts!A:I'
 };
 
 export class SheetsSyncService {
@@ -78,7 +78,6 @@ export class SheetsSyncService {
             });
 
             const values = response.data.values || [];
-            // El código está en la segunda columna (índice 1)
             for (let i = 0; i < values.length; i++) {
                 if (values[i][1] === codigo) {
                     return i + 1; // +1 porque las filas en Sheets empiezan en 1
@@ -151,10 +150,11 @@ export class SheetsSyncService {
                 case 'posts':
                     rowData = [
                         timestamp,
+                        document.codigo || '',
                         document.title?.replace(/<[^>]*>/g, '') || '',
                         document.content?.replace(/<[^>]*>/g, '') || '',
                         document.slug || '',
-                        document.disponible ? 'Publicado' : 'No publicado',
+                        document.disponible ? 'Disponible' : 'No disponible',
                         document.images?.length?.toString() || '0',
                         this.formatDate(document.createdAt),
                         this.formatCloudinaryUrls(document.images)
@@ -172,12 +172,10 @@ export class SheetsSyncService {
                 return;
             }
 
-            // Buscar fila existente por código
             const existingRow = document.codigo ? 
                 await this.findRowByCodigo(document.codigo, range) : null;
 
             if (existingRow) {
-                // Actualizar fila existente
                 const updateRange = `${range.split('!')[0]}!A${existingRow}`;
                 await this.sheetsApi.spreadsheets.values.update({
                     spreadsheetId: SPREADSHEET_ID,
@@ -191,7 +189,6 @@ export class SheetsSyncService {
                     codigo: document.codigo
                 });
             } else {
-                // Insertar nueva fila
                 await this.sheetsApi.spreadsheets.values.append({
                     spreadsheetId: SPREADSHEET_ID,
                     range: range,

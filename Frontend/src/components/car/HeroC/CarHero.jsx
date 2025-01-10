@@ -41,7 +41,7 @@ export const CarHero = () => {
         <div className="absolute inset-0 bg-black bg-opacity-50 z-10"></div>
         <div className="absolute inset-0 flex flex-col justify-center items-start text-white p-16 z-20">
           <p className="text-xl text-slate-400 mb-2">Encuentra con MS De Valor</p>
-          <h2 className="text-4xl font-bold mb-8">el vehículo de tus Sueños</h2>
+          <h2 className="text-4xl font-bold mb-8">El vehículo de tus Sueños</h2>
           <Link to="/cars-list"> 
             <button className="bg-white text-blue-900 px-6 py-2 rounded-md font-semibold hover:bg-opacity-90 transition">
               VER MÁS

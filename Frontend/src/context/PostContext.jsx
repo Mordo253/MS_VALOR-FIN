@@ -41,15 +41,15 @@ export const PostProvider = ({ children }) => {
       // Validar que el título y contenido no estén vacíos después de quitar el HTML
       const titleText = postData.title.replace(/<[^>]*>/g, '').trim();
       const contentText = postData.content.replace(/<[^>]*>/g, '').trim();
-
+  
       if (!titleText) {
         throw new Error('El título no puede estar vacío');
       }
-
+  
       if (!contentText) {
         throw new Error('El contenido no puede estar vacío');
       }
-
+  
       const processedData = {
         title: postData.title,
         content: postData.content,
@@ -61,27 +61,27 @@ export const PostProvider = ({ children }) => {
           width: img.width || 0,
           height: img.height || 0,
           format: img.format || '',
-          resource_type: img.resource_type || 'image'
+          resource_type: img.resource_type || 'image',
         })).filter(img => 
           (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) ||
           (img.secure_url && !img.secure_url.startsWith('blob:'))
-        )
+        ),
       };
-
+  
       // Validar que haya al menos una imagen válida
       if (!processedData.images.length) {
         throw new Error('Debes incluir al menos una imagen');
       }
-
+  
       const response = await axios.post(`${API_URL}/post/posts`, processedData, {
         headers: { "Content-Type": "application/json" },
-        timeout: 30000 // 30 segundos de timeout para manejar la subida de imágenes
+        timeout: 30000, // 30 segundos de timeout para manejar la subida de imágenes
       });
-
+  
       if (!response.data?.data) {
         throw new Error("Respuesta del servidor incompleta");
       }
-
+  
       setPosts(prev => [...prev, response.data.data]);
       setFilteredPosts(prev => [...prev, response.data.data]);
       return { success: true, data: response.data.data };
@@ -90,6 +90,7 @@ export const PostProvider = ({ children }) => {
       throw new Error(err.response?.data?.message || err.message || "Error al crear el post");
     }
   };
+  
 
   const updatePost = async (slug, postData) => {
     try {
@@ -100,16 +101,18 @@ export const PostProvider = ({ children }) => {
           throw new Error('El título no puede estar vacío');
         }
       }
-
+  
       if (postData.content) {
         const contentText = postData.content.replace(/<[^>]*>/g, '').trim();
         if (!contentText) {
           throw new Error('El contenido no puede estar vacío');
         }
       }
-
+  
+      // Procesar datos excluyendo `codigo`
+      const { codigo, ...cleanData } = postData;
       const processedData = {
-        ...postData,
+        ...cleanData,
         title: postData.title,
         content: postData.content,
         disponible: Boolean(postData.disponible),
@@ -121,30 +124,30 @@ export const PostProvider = ({ children }) => {
           width: img.width || 0,
           height: img.height || 0,
           format: img.format || '',
-          resource_type: img.resource_type || 'image'
+          resource_type: img.resource_type || 'image',
         })).filter(img => 
           (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) ||
           (img.secure_url && !img.secure_url.startsWith('blob:'))
         ),
         imagesToDelete: (postData.imagesToDelete || []).filter(id => 
           typeof id === 'string' && !id.startsWith('temp_')
-        )
+        ),
       };
-
+  
       // Validar que haya al menos una imagen válida después de procesar
       if (!processedData.images.length) {
         throw new Error('Debes mantener al menos una imagen');
       }
-
+  
       const response = await axios.put(`${API_URL}/post/posts/${slug}`, processedData, {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 30000
+        timeout: 30000,
       });
-
+  
       if (!response.data?.data) {
         throw new Error('Respuesta del servidor incompleta');
       }
-
+  
       setPosts(prev => prev.map(p => p.slug === slug ? response.data.data : p));
       setFilteredPosts(prev => prev.map(p => p.slug === slug ? response.data.data : p));
       return response.data;
@@ -153,6 +156,7 @@ export const PostProvider = ({ children }) => {
       throw new Error(error.response?.data?.message || error.message || 'Error al actualizar el post');
     }
   };
+  
 
   const getPost = async (slug) => {
     try {

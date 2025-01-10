@@ -5,14 +5,14 @@ import AdvancedTooltip from '../../ui/Tooltips/AdvancedTooltip';
 const AboutMe = () => {
   const teamMembers = [
     {
-      name: 'Juan Fernando Gonzáles',
+      name: 'Juan Fernando González',
       role: 'Director',
       image: '/api/placeholder/150/150',
       bio: 'Lorem ipsum, dolor sit amet consect',
       WhatsApp: 'https://wa.me/573122259584?text=Hola Juan Fernando, estoy interesad@ en lo que ofrece MS De Valor',
     },
     {
-      name: 'Claudia Gonzáles',
+      name: 'Claudia González',
       role: 'Asesora financiera',
       image: '/api/placeholder/150/150',
       bio: 'Lorem ipsum, dolor sit amet consect',

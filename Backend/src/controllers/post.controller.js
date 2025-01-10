@@ -27,11 +27,11 @@ export const createPost = async (req, res) => {
     const cleanTitle = basicSanitize(title);
     const cleanContent = basicSanitize(content);
 
-    if (!cleanTitle || cleanTitle.trim() === '') {
+    if (!cleanTitle || cleanTitle.trim() === "") {
       throw new Error("El título es obligatorio");
     }
 
-    if (!cleanContent || cleanContent.trim() === '') {
+    if (!cleanContent || cleanContent.trim() === "") {
       throw new Error("El contenido es obligatorio");
     }
 
@@ -39,14 +39,27 @@ export const createPost = async (req, res) => {
       throw new Error("Debe incluir al menos una imagen");
     }
 
+    // Generar el código único para el nuevo post
+    const lastPost = await Post.findOne()
+      .sort({ createdAt: -1 })
+      .select("codigo")
+      .exec();
+
+    let newCode = "POST-00001"; // Código inicial
+    if (lastPost?.codigo) {
+      const lastCodeNumber = parseInt(lastPost.codigo.split("-")[1], 10);
+      newCode = `POST-${String(lastCodeNumber + 1).padStart(5, "0")}`;
+    }
+
+    // Procesamiento de imágenes
     const processedImages = [];
     const maxSize = 5 * 1024 * 1024;
 
     for (const img of images) {
-      if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
+      if (img.file && typeof img.file === "string" && img.file.startsWith("data:")) {
         const approximateSize = img.file.length * 0.75;
         if (approximateSize > maxSize) {
-          throw new Error(`Imagen ${img.public_id || 'nueva'} excede el tamaño máximo de 5MB`);
+          throw new Error(`Imagen ${img.public_id || "nueva"} excede el tamaño máximo de 5MB`);
         }
 
         const result = await uploadImage(img.file);
@@ -57,7 +70,7 @@ export const createPost = async (req, res) => {
             width: result.width || 0,
             height: result.height || 0,
             format: result.format,
-            resource_type: result.resource_type
+            resource_type: result.resource_type,
           });
         }
       }
@@ -67,12 +80,14 @@ export const createPost = async (req, res) => {
       throw new Error("No se pudo procesar ninguna imagen correctamente");
     }
 
+    // Crear el nuevo post
     const newPost = new Post({
       ...postData,
       title: cleanTitle,
       content: cleanContent,
+      codigo: newCode,
       images: processedImages,
-      disponible: Boolean(postData.disponible)
+      disponible: Boolean(postData.disponible),
     });
 
     const savedPost = await newPost.save({ session });
@@ -81,20 +96,21 @@ export const createPost = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Post creado exitosamente",
-      data: savedPost
+      data: savedPost,
     });
-
   } catch (error) {
     await session.abortTransaction();
     console.error("Error en createPost:", error);
+
     res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   } finally {
     session.endSession();
   }
 };
+
 
 export const getAllPosts = async (req, res) => {
   try {
@@ -192,7 +208,7 @@ export const updatePost = async (req, res) => {
               width: result.width || 0,
               height: result.height || 0,
               format: result.format,
-              resource_type: result.resource_type
+              resource_type: result.resource_type,
             });
           }
         } else if (img.secure_url && !img.secure_url.startsWith('blob:')) {
@@ -205,14 +221,16 @@ export const updatePost = async (req, res) => {
       throw new Error("Debe mantener al menos una imagen");
     }
 
+    // Actualizar el post
     const updatedPost = await Post.findOneAndUpdate(
       { slug: req.params.slug },
       {
         ...postData,
         title: cleanTitle,
         content: cleanContent,
+        codigo: postData.codigo || post.codigo, // Incluir el código si está presente en la solicitud
         images: processedImages,
-        disponible: postData.disponible !== undefined ? Boolean(postData.disponible) : post.disponible
+        disponible: postData.disponible !== undefined ? Boolean(postData.disponible) : post.disponible,
       },
       { new: true, session }
     );
@@ -222,20 +240,20 @@ export const updatePost = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Post actualizado exitosamente",
-      data: updatedPost
+      data: updatedPost,
     });
-
   } catch (error) {
     await session.abortTransaction();
     console.error("Error en updatePost:", error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   } finally {
     session.endSession();
   }
 };
+
 
 export const deletePost = async (req, res) => {
   const session = await mongoose.startSession();
@@ -344,4 +362,4 @@ export const searchPosts = async (req, res) => {
       message: 'Error al buscar posts'
     });
   }
-};
+}; 

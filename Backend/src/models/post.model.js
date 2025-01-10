@@ -26,6 +26,7 @@ const PostSchema = new mongoose.Schema({
         return value;
       }
     },
+    codigo: { type: String, required: true, unique: true },
     content: {
       type: String,
       required: [true, 'Por favor ingrese el contenido'],
@@ -61,5 +62,5 @@ const PostSchema = new mongoose.Schema({
       .replace(/-+/g, '-');
     next();
   });
-  
+ 
   export default mongoose.model('Post', PostSchema);

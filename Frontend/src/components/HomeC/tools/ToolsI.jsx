@@ -137,7 +137,7 @@ const CreditSimulator = ({ onClose }) => {
   };
 
   const handleSimulate = () => {
-    if (!amount || amount < 1000000 || amount > 500000000) {
+    if (!amount || amount < 1000000 || amount > 20000000000) {
       alert('Por favor ingrese un monto válido entre $1,000,000 y $500,000,000');
       return;
     }
@@ -356,7 +356,7 @@ export const ToolsI = () => {
   const toolCards = [
     {
       icon: <Calculator className="w-8 h-8 text-indigo-600" />,
-      title: "Simulador de CrÃ©dito",
+      title: "Simulador de Crédito",
       onClick: () => setIsSimulatorOpen(true),
     },
     {
