@@ -1,5 +1,5 @@
 // controllers/scraper.controller.js
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer';  // Cambia a puppeteer
 import mongoose from 'mongoose';
 import FinancialData from '../models/scraping.model.js';
 
@@ -201,10 +201,12 @@ const scrapeAllData = async () => {
   try {
     console.log('Iniciando proceso de scraping general');
     const browser = await puppeteer.launch({
-      executablePath: '/opt/render/project/src/Backend/node_modules/puppeteer-core/.local-chromium/chrome-linux/chrome',  // Ruta al ejecutable de Chromium en Render
+      executablePath: '/path/to/chromium', // Cambia esta ruta
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: true
     });
+    
+    
     
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 });

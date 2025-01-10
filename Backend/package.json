@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "npx puppeteer browsers install chrome && node src/index.js",
+    "start": "node src/index.js",
     "build": "npm install"
   },
   "engines": {
@@ -40,6 +40,7 @@
     "@babel/core": "^7.25.2",
     "@babel/node": "^7.25.0",
     "@babel/preset-env": "^7.25.4",
-    "nodemon": "^3.1.6"
+    "nodemon": "^3.1.6",
+    "chromium": "^1.0.0"
   }
 }
