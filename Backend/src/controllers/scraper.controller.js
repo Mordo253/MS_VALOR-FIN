@@ -200,10 +200,12 @@ const scrapeAllData = async () => {
   let browser;
   try {
     console.log('Iniciando proceso de scraping general');
-    browser = await puppeteer.launch({
+    const browser = await puppeteer.launch({
+      executablePath: '/opt/render/project/src/Backend/node_modules/puppeteer-core/.local-chromium/chrome-linux/chrome',  // Ruta al ejecutable de Chromium en Render
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: true
     });
+    
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 });
 
