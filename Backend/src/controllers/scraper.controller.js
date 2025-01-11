@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import FinancialData from '../models/scraping.model.js';
 import chromium from 'chromium';  // Usamos chromium para obtener el path
 
-const waitForSelector = async (page, selector, timeout = 5000) => {
+const waitForSelector = async (page, selector, timeout = 10000) => {
   try {
     await page.waitForSelector(selector, { timeout });
     return true;
@@ -16,7 +16,7 @@ const waitForSelector = async (page, selector, timeout = 5000) => {
 const scrapers = {
   tasaUsura: async (page) => {
     console.log('Iniciando scraping de Tasa Usura');
-    await page.goto('https://www.larepublica.co/indicadores-economicos/bancos/tasa-de-usura', { waitUntil: 'networkidle0' });
+    await page.goto('https://www.larepublica.co/indicadores-economicos/bancos/tasa-de-usura', { waitUntil: 'load' });
     await waitForSelector(page, '.price');
     const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
@@ -38,7 +38,7 @@ const scrapers = {
 
   dtf: async (page) => {
     console.log('Iniciando scraping de DTF');
-    await page.goto('https://www.larepublica.co/indicadores-economicos/bancos/dtf', { waitUntil: 'networkidle0' });
+    await page.goto('https://www.larepublica.co/indicadores-economicos/bancos/dtf', { waitUntil: 'load' });
     await waitForSelector(page, '.price');
     const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
@@ -59,7 +59,7 @@ const scrapers = {
 
   oro: async (page) => {
     console.log('Iniciando scraping de Oro');
-    await page.goto('https://www.larepublica.co/indicadores-economicos/commodities/oro', { waitUntil: 'networkidle0' });
+    await page.goto('https://www.larepublica.co/indicadores-economicos/commodities/oro', { waitUntil: 'load' });
     await waitForSelector(page, '.price');
     const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
@@ -81,7 +81,7 @@ const scrapers = {
 
   petroleo: async (page) => {
     console.log('Iniciando scraping de Petróleo');
-    await page.goto('https://www.larepublica.co/indicadores-economicos/commodities/petroleo', { waitUntil: 'networkidle0' });
+    await page.goto('https://www.larepublica.co/indicadores-economicos/commodities/petroleo', { waitUntil: 'load' });
     await waitForSelector(page, '.price');
     const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
@@ -103,7 +103,7 @@ const scrapers = {
 
   dolar: async (page) => {
     console.log('Iniciando scraping de Dólar');
-    await page.goto('https://www.larepublica.co/indicadores-economicos/mercado-cambiario/dolar', { waitUntil: 'networkidle0' });
+    await page.goto('https://www.larepublica.co/indicadores-economicos/mercado-cambiario/dolar', { waitUntil: 'load' });
     await waitForSelector(page, '.price');
     const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
@@ -133,7 +133,7 @@ const scrapers = {
 
   ipc: async (page) => {
     console.log('Iniciando scraping de IPC');
-    await page.goto('https://www.larepublica.co/indicadores-economicos/macro/ipc', { waitUntil: 'networkidle0' });
+    await page.goto('https://www.larepublica.co/indicadores-economicos/macro/ipc', { waitUntil: 'load' });
     await waitForSelector(page, '.price');
     const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
@@ -155,7 +155,7 @@ const scrapers = {
 
   uvr: async (page) => {
     console.log('Iniciando scraping de UVR');
-    await page.goto('https://www.larepublica.co/indicadores-economicos/bancos/uvr', { waitUntil: 'networkidle0' });
+    await page.goto('https://www.larepublica.co/indicadores-economicos/bancos/uvr', { waitUntil: 'load' });
     await waitForSelector(page, '.price');
     const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
@@ -177,7 +177,7 @@ const scrapers = {
   
   euro: async (page) => {
     console.log('Iniciando scraping de Euro');
-    await page.goto('https://www.larepublica.co/indicadores-economicos/mercado-cambiario/euro', { waitUntil: 'networkidle0' });
+    await page.goto('https://www.larepublica.co/indicadores-economicos/mercado-cambiario/euro', { waitUntil: 'load' });
     await waitForSelector(page, '.price');
     const data = await page.evaluate(() => {
       const price = document.querySelector('.price')?.textContent.trim();
