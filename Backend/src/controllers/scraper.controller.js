@@ -22,7 +22,7 @@ const retry = async (fn, retries = 3) => {
       if (i === retries - 1) throw error; // Relanzar error después del último intento
     }
   }
-};
+};  
 
 const scrapers = {
   tasaUsura: async (page) => {
