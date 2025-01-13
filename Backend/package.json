@@ -33,6 +33,7 @@
     "mongoose": "^8.9.3",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.3",
+    "puppeteer": "^24.0.0",
     "puppeteer-core": "^23.5.0",
     "zod": "^3.23.8"
   },

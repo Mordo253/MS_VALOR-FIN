@@ -62,83 +62,76 @@ const ShareButton = ({ component: ShareButtonComponent, icon: IconComponent, col
   </ShareButtonComponent>
 );
 
-const CustomShareButton = ({ property, mainImageUrl }) => {
+const CustomShareButton = ({ property }) => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // Actualizar los meta tags dinámicamente
+    // Obtener la URL directa de la primera imagen
+    const mainImageUrl = property.images[0]?.secure_url;
+    
+    // Actualizar meta tags para la previsualización
     const updateMetaTags = () => {
-      // Título
-      document.title = `${property.title} - ${property.codigo}`;
+      // Primero eliminar meta tags existentes para evitar duplicados
+      document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]')
+        .forEach(tag => tag.remove());
       
-      // Meta tags Open Graph
-      let metaTags = {
-        'og:title': `${property.title} - ${property.codigo}`,
-        'og:description': property.description || `${property.tipoInmueble} en ${property.ciudad}`,
-        'og:image': mainImageUrl,
-        'og:url': window.location.href,
-        'og:type': 'website',
-        'og:site_name': 'MS DE VALOR',
-        // Twitter Card tags
-        'twitter:card': 'summary_large_image',
-        'twitter:title': `${property.title} - ${property.codigo}`,
-        'twitter:description': property.description || `${property.tipoInmueble} en ${property.ciudad}`,
-        'twitter:image': mainImageUrl
-      };
+      // Crear y añadir nuevos meta tags
+      const tags = [
+        { property: 'og:url', content: window.location.href },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:title', content: `${property.title} - ${property.codigo}` },
+        { property: 'og:description', content: property.description || `${property.tipoInmueble} en ${property.ciudad}` },
+        { property: 'og:image', content: mainImageUrl },
+        { property: 'og:image:secure_url', content: mainImageUrl },
+        { property: 'og:image:alt', content: property.title },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:image', content: mainImageUrl }
+      ];
 
-      // Actualizar o crear meta tags
-      Object.entries(metaTags).forEach(([property, content]) => {
-        let element = document.querySelector(`meta[property="${property}"]`) ||
-                     document.querySelector(`meta[name="${property}"]`);
-        
-        if (!element) {
-          element = document.createElement('meta');
-          element.setAttribute(property.includes('og:') ? 'property' : 'name', property);
-          document.head.appendChild(element);
-        }
-        element.setAttribute('content', content);
+      tags.forEach(({ property, name, content }) => {
+        const meta = document.createElement('meta');
+        if (property) meta.setAttribute('property', property);
+        if (name) meta.setAttribute('name', name);
+        meta.setAttribute('content', content);
+        document.head.appendChild(meta);
       });
     };
 
     updateMetaTags();
 
-    // Limpieza al desmontar
+    // Cleanup al desmontar
     return () => {
-      // Remover meta tags al salir
-      const metaTags = document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]');
-      metaTags.forEach(tag => tag.remove());
+      document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]')
+        .forEach(tag => tag.remove());
     };
-  }, [property, mainImageUrl]);
+  }, [property]);
 
   const handleShare = async () => {
-    const currentUrl = window.location.href;
-    const shareData = {
-      title: `${property.title} - ${property.codigo}`,
-      text: property.description || `${property.tipoInmueble} en ${property.ciudad}`,
-      url: currentUrl
-    };
+    const shareUrl = window.location.href;
+    const shareTitle = `${property.title} - ${property.codigo}`;
+    const shareText = property.description || `${property.tipoInmueble} en ${property.ciudad}`;
 
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(currentUrl);
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-      } catch (error) {
-        console.error('Error copying to clipboard:', error);
       }
+    } catch (error) {
+      console.error('Error al compartir:', error);
     }
   };
 
   return (
     <button
       onClick={handleShare}
-      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors w-full"
+      className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors w-full"
     >
       {copied ? (
         <>
@@ -373,10 +366,7 @@ export const PropertyDetails = () => {
                   </Button>
                 </a>
 
-                <CustomShareButton 
-                  property={property} 
-                  mainImageUrl={property.images[mainImageIndex]?.secure_url} 
-                />
+                <CustomShareButton property={property} />
 
                 <div className="flex justify-center gap-4 pt-4">
                   <ShareButton component={FacebookShareButton} icon={FacebookIcon} color="#1877F2" />
