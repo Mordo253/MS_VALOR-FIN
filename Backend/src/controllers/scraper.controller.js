@@ -282,85 +282,118 @@ const getFinancialData = async (req, res) => {
 
 const updateFinancialData = async (req, res) => {
   console.log(`[${new Date().toLocaleString()}] Iniciando actualización de datos financieros`);
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
+  
+  // Agregar un timeout global para toda la operación
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Timeout global de operación')), 300000); // 5 minutos
+  });
+  
   try {
-    // Obtener datos existentes
-    const existingData = await FinancialData.find({}).session(session);
-    const existingDataMap = new Map(existingData.map(item => [item.symbol, item]));
+    const updateProcess = async () => {
+      // Realizar scraping antes de iniciar la transacción
+      console.log('Iniciando scraping de datos...');
+      const scrapedData = await scrapeAllData();
 
-    // Realizar scraping de nuevos datos
-    console.log('Iniciando scraping de datos...');
-    const scrapedData = await scrapeAllData();
+      if (!scrapedData || scrapedData.length === 0) {
+        throw new Error('No se obtuvieron datos del scraping.');
+      }
 
-    if (!scrapedData || scrapedData.length === 0) {
-      throw new Error('No se obtuvieron datos del scraping.');
-    }
+      // Función para actualizar un solo item con reintentos
+      const updateSingleItem = async (item) => {
+        const session = await mongoose.startSession();
+        let attempts = 0;
+        const maxAttempts = 3;
 
-    // Procesar y actualizar datos
-    const updatePromises = scrapedData
-      .filter(item => item && item.price !== null) // Validar datos
-      .map(async item => {
-        const existing = existingDataMap.get(item.symbol);
+        while (attempts < maxAttempts) {
+          try {
+            await session.withTransaction(async () => {
+              const existing = await FinancialData.findOne({ symbol: item.symbol })
+                .session(session)
+                .maxTimeMS(60000); // Timeout de 30 segundos para la consulta
+              
+              const previousPrice = existing ? existing.price : item.price;
+              
+              const priceChange = parseFloat((item.price - previousPrice).toFixed(2));
+              const pricePercentChange = previousPrice 
+                ? parseFloat(((item.price - previousPrice) / previousPrice * 100).toFixed(2)) 
+                : 0;
 
-        // Si no hay datos existentes, el precio actual será también el precio previo
-        const previousPrice = existing ? existing.price : item.price;
-
-        // Calcular cambios
-        const priceChange = parseFloat((item.price - previousPrice).toFixed(2));
-        const pricePercentChange = previousPrice 
-          ? parseFloat(((item.price - previousPrice) / previousPrice * 100).toFixed(2)) 
-          : 0;
-
-        return FinancialData.findOneAndUpdate(
-          { symbol: item.symbol },
-          {
-            ...item,
-            previousPrice,
-            change: priceChange,
-            percentChange: pricePercentChange,
-            source: 'La República',
-            updatedAt: new Date()
-          },
-          { 
-            upsert: true, 
-            new: true,
-            session,
-            setDefaultsOnInsert: true 
+              await FinancialData.findOneAndUpdate(
+                { symbol: item.symbol },
+                {
+                  ...item,
+                  previousPrice,
+                  change: priceChange,
+                  percentChange: pricePercentChange,
+                  source: 'La República',
+                  updatedAt: new Date()
+                },
+                { 
+                  upsert: true, 
+                  new: true,
+                  session,
+                  setDefaultsOnInsert: true,
+                  maxTimeMS: 30000 // Timeout de 30 segundos para la actualización
+                }
+              );
+            }, {
+              maxTimeMS: 60000 // Timeout de 1 minuto para la transacción
+            });
+            return true; // Éxito
+          } catch (error) {
+            attempts++;
+            console.error(`Intento ${attempts} fallido para ${item.symbol}:`, error.message);
+            
+            // Verificar si el error es por timeout o es fatal
+            if (error.message.includes('timeout') || attempts === maxAttempts) {
+              throw error;
+            }
+            
+            // Esperar antes de reintentar con backoff exponencial
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
+          } finally {
+            await session.endSession();
           }
-        );
-      });
+        }
+      };
 
-    const results = await Promise.allSettled(updatePromises);
-    const fulfilled = results.filter(result => result.status === 'fulfilled').map(r => r.value);
-    const rejected = results.filter(result => result.status === 'rejected').map(r => r.reason);
+      // Filtrar y procesar los datos válidos
+      const validData = scrapedData.filter(item => item && item.price !== null);
+      
+      // Actualizar cada item individualmente con un límite de concurrencia
+      const results = await Promise.allSettled(
+        validData.map(item => updateSingleItem(item))
+      );
 
-    console.log(`${fulfilled.length} actualizaciones completadas exitosamente.`);
-    if (rejected.length > 0) {
-      console.error(`${rejected.length} actualizaciones fallaron. Razones:`, rejected);
-    }
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected');
 
-    await session.commitTransaction();
+      console.log(`${successful} actualizaciones completadas exitosamente.`);
+      if (failed.length > 0) {
+        console.error(`${failed.length} actualizaciones fallaron:`, 
+          failed.map(f => f.reason.message));
+      }
 
-    res.json({ 
-      message: 'Actualización completada',
-      successCount: fulfilled.length,
-      errorCount: rejected.length,
-      data: fulfilled 
-    });
+      return {
+        message: 'Actualización completada',
+        successCount: successful,
+        errorCount: failed.length,
+        errors: failed.map(f => f.reason.message)
+      };
+    };
+
+    // Ejecutar con timeout global
+    const result = await Promise.race([updateProcess(), timeoutPromise]);
+    res.json(result);
+
   } catch (error) {
     console.error('Error en actualización:', error);
-    await session.abortTransaction();
     res.status(500).json({ 
       error: 'Error al actualizar los datos',
       details: error.message 
     });
-  } finally {
-    session.endSession();
   }
 };
-
 
 export {
   scrapeAllData,
