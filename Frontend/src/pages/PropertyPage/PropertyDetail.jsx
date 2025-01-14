@@ -28,6 +28,7 @@ import {
   EmailIcon
 } from 'react-share';
 
+// Utilidades
 const shouldHideValue = (value) => {
   if (value === null || value === undefined) return true;
   if (typeof value === 'number' && value === 0) return true;
@@ -41,6 +42,7 @@ const formatLocation = (zona, ciudad, departamento) => {
     .join(', ');
 };
 
+// Componentes de detalle
 const PropertyDetail = ({ icon, label, value }) => {
   if (shouldHideValue(value)) return null;
   return (
@@ -54,41 +56,95 @@ const PropertyDetail = ({ icon, label, value }) => {
   );
 };
 
-const ShareButton = ({ component: ShareButtonComponent, icon: IconComponent, color }) => (
-  <ShareButtonComponent url={window.location.href}>
-    <div className="p-2 rounded-full transition-transform hover:scale-110" style={{ backgroundColor: color }}>
-      <IconComponent size={20} round bgStyle={{ fill: 'transparent' }} iconFillColor="white" />
-    </div>
-  </ShareButtonComponent>
-);
+// Componente ShareButton actualizado
+const ShareButton = ({ component: ShareButtonComponent, icon: IconComponent, color, property }) => {
+  const shareUrl = window.location.href;
+  const mainImageUrl = property.images[0]?.secure_url;
+  const shareTitle = `${property.title} - ${property.codigo}`;
+  const shareDescription = property.description || `${property.tipoInmueble} en ${property.ciudad}`;
+  const priceFormatted = property.costo.toLocaleString();
+  const locationFormatted = `${property.zona}, ${property.ciudad}, ${property.departamento}`;
 
+  // Mensajes personalizados por plataforma
+  const customMessages = {
+    facebook: `${shareTitle}\n${shareDescription}\nPrecio: $${priceFormatted}\nUbicación: ${locationFormatted}`,
+    twitter: `${shareTitle} - MS DE VALOR`,
+    whatsapp: `¡Mira esta propiedad!\n\n${shareTitle}\n${shareDescription}\n\nPrecio: $${priceFormatted}\nUbicación: ${locationFormatted}\n\nMás información:`,
+    email: `${shareTitle}\n\n${shareDescription}\n\nPrecio: $${priceFormatted}\nUbicación: ${locationFormatted}\n\nVer más detalles en:`
+  };
+
+  return (
+    <ShareButtonComponent 
+      url={shareUrl}
+      title={shareTitle}
+      description={shareDescription}
+      quote={customMessages.facebook}
+      subject={`Propiedad ${property.codigo} - MS DE VALOR`}
+      body={customMessages.email}
+      image={mainImageUrl}
+      hashtag="#MSDeValor"
+      via="msdevalor"
+    >
+      <div className="p-2 rounded-full transition-transform hover:scale-110" style={{ backgroundColor: color }}>
+        <IconComponent size={20} round bgStyle={{ fill: 'transparent' }} iconFillColor="white" />
+      </div>
+    </ShareButtonComponent>
+  );
+};
+
+// Componente CustomShareButton actualizado
 const CustomShareButton = ({ property }) => {
   const [copied, setCopied] = useState(false);
+  const mainImageUrl = property.images[0]?.secure_url;
+  const shareUrl = window.location.href;
+  const priceFormatted = property.costo.toLocaleString();
 
   useEffect(() => {
-    // Obtener la URL directa de la primera imagen
-    const mainImageUrl = property.images[0]?.secure_url;
-    
-    // Actualizar meta tags para la previsualización
     const updateMetaTags = () => {
-      // Primero eliminar meta tags existentes para evitar duplicados
-      document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]')
+      // Limpiar meta tags existentes
+      document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"], meta[name="description"], meta[name="keywords"]')
         .forEach(tag => tag.remove());
-      
-      // Crear y añadir nuevos meta tags
-      const tags = [
-        { property: 'og:url', content: window.location.href },
+
+      // Configurar meta tags
+      const metaTags = [
+        // Meta tags básicos
+        { name: 'description', content: property.description || `${property.tipoInmueble} en ${property.ciudad}` },
+        { name: 'author', content: 'MS DE VALOR' },
+        { name: 'keywords', content: `${property.tipoInmueble}, ${property.ciudad}, ${property.zona}, inmuebles, propiedades` },
+        
+        // Open Graph / Facebook
+        { property: 'og:url', content: shareUrl },
         { property: 'og:type', content: 'website' },
         { property: 'og:title', content: `${property.title} - ${property.codigo}` },
         { property: 'og:description', content: property.description || `${property.tipoInmueble} en ${property.ciudad}` },
         { property: 'og:image', content: mainImageUrl },
         { property: 'og:image:secure_url', content: mainImageUrl },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
         { property: 'og:image:alt', content: property.title },
+        { property: 'og:site_name', content: 'MS DE VALOR' },
+        { property: 'og:price:amount', content: priceFormatted },
+        { property: 'og:price:currency', content: 'COP' },
+        { property: 'og:locale', content: 'es_CO' },
+        
+        // Twitter Card
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:image', content: mainImageUrl }
+        { name: 'twitter:site', content: '@msdevalor' },
+        { name: 'twitter:creator', content: '@msdevalor' },
+        { name: 'twitter:title', content: `${property.title} - ${property.codigo}` },
+        { name: 'twitter:description', content: property.description || `${property.tipoInmueble} en ${property.ciudad}` },
+        { name: 'twitter:image', content: mainImageUrl },
+        { name: 'twitter:image:alt', content: property.title },
+        
+        // WhatsApp específico
+        { property: 'og:image:type', content: 'image/jpeg' },
+        { property: 'og:locale', content: 'es_LA' }
       ];
 
-      tags.forEach(({ property, name, content }) => {
+      // Crear y añadir meta tags
+      metaTags.forEach(({ property, name, content }) => {
+        if (!content) return;
+        
         const meta = document.createElement('meta');
         if (property) meta.setAttribute('property', property);
         if (name) meta.setAttribute('name', name);
@@ -98,26 +154,22 @@ const CustomShareButton = ({ property }) => {
     };
 
     updateMetaTags();
-
-    // Cleanup al desmontar
     return () => {
-      document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]')
+      document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"], meta[name="description"], meta[name="keywords"]')
         .forEach(tag => tag.remove());
     };
-  }, [property]);
+  }, [property, mainImageUrl, shareUrl, priceFormatted]);
 
   const handleShare = async () => {
-    const shareUrl = window.location.href;
-    const shareTitle = `${property.title} - ${property.codigo}`;
-    const shareText = property.description || `${property.tipoInmueble} en ${property.ciudad}`;
+    const shareData = {
+      title: `${property.title} - ${property.codigo}`,
+      text: `${property.description || `${property.tipoInmueble} en ${property.ciudad}`}\nPrecio: $${priceFormatted}`,
+      url: shareUrl
+    };
 
     try {
       if (navigator.share) {
-        await navigator.share({
-          title: shareTitle,
-          text: shareText,
-          url: shareUrl
-        });
+        await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(shareUrl);
         setCopied(true);
@@ -129,22 +181,31 @@ const CustomShareButton = ({ property }) => {
   };
 
   return (
-    <button
-      onClick={handleShare}
-      className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors w-full"
-    >
-      {copied ? (
-        <>
-          <Check className="w-5 h-5" />
-          <span>¡Copiado!</span>
-        </>
-      ) : (
-        <>
-          <Share2 className="w-5 h-5" />
-          <span>Compartir enlace</span>
-        </>
-      )}
-    </button>
+    <div className="space-y-3">
+      <button
+        onClick={handleShare}
+        className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors w-full"
+      >
+        {copied ? (
+          <>
+            <Check className="w-5 h-5" />
+            <span>¡Copiado!</span>
+          </>
+        ) : (
+          <>
+            <Share2 className="w-5 h-5" />
+            <span>Compartir enlace</span>
+          </>
+        )}
+      </button>
+
+      <div className="flex justify-center gap-4 pt-4">
+        <ShareButton component={FacebookShareButton} icon={FacebookIcon} color="#1877F2" property={property} />
+        <ShareButton component={TwitterShareButton} icon={TwitterIcon} color="#1DA1F2" property={property} />
+        <ShareButton component={WhatsappShareButton} icon={WhatsappIcon} color="#25D366" property={property} />
+        <ShareButton component={EmailShareButton} icon={EmailIcon} color="#D44638" property={property} />
+      </div>
+    </div>
   );
 };
 
