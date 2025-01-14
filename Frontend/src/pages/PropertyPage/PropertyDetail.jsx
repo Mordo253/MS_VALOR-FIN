@@ -428,13 +428,6 @@ export const PropertyDetails = () => {
                 </a>
 
                 <CustomShareButton property={property} />
-
-                <div className="flex justify-center gap-4 pt-4">
-                  <ShareButton component={FacebookShareButton} icon={FacebookIcon} color="#1877F2" />
-                  <ShareButton component={TwitterShareButton} icon={TwitterIcon} color="#1DA1F2" />
-                  <ShareButton component={WhatsappShareButton} icon={WhatsappIcon} color="#25D366" />
-                  <ShareButton component={EmailShareButton} icon={EmailIcon} color="#D44638" />
-                </div>
               </div>
             </div>
           </div>
