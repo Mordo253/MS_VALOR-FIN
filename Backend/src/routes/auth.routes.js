@@ -5,17 +5,15 @@ import {
   logout,
   verifyToken,
   changePassword,
-  register,
 } from "../controllers/auth.controller.js";
 import { validateSchema } from "../middlewares/validator.middleware.js";
-import { loginSchema, changePasswordSchema, registerSchema } from "../schemas/auth.schema.js";
+import { loginSchema, changePasswordSchema } from "../schemas/auth.schema.js";
 import { auth } from "../middlewares/auth.middleware.js";  // Middleware de autenticación
 
 const router = Router();
 
 // Ruta de login
 router.post("/login", validateSchema(loginSchema), login);
-router.post("/register", validateSchema(registerSchema), register);
 
 // Ruta para verificar el token
 router.get("/verify", verifyToken);
