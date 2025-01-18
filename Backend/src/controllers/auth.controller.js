@@ -4,10 +4,16 @@ import bcrypt from "bcryptjs";
 import { TOKEN_SECRET } from "../config.js";
 import { createAccessToken } from "../libs/jwt.js";
 
-// Función para registrar un usuario
+// Función de registro
 export const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
+    
+    console.log('📝 Datos de registro recibidos:', { 
+      username, 
+      email,
+      passwordLength: password.length 
+    });
 
     // Verificar si el correo ya está registrado
     const userFound = await User.findOne({ email });
@@ -16,18 +22,20 @@ export const register = async (req, res) => {
         message: ["El correo electrónico ya está en uso"],
       });
 
-    // Hashear la contraseña
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    // Crear un nuevo usuario
+    // Crear nuevo usuario - el hash se hará automáticamente en el pre-save
     const newUser = new User({
       username,
       email,
-      password: passwordHash,
+      password // La contraseña se hasheará automáticamente
     });
 
-    // Guardar el usuario en la base de datos
+    // Guardar el usuario
     const userSaved = await newUser.save();
+    console.log('💾 Usuario guardado:', {
+      id: userSaved._id,
+      username: userSaved.username,
+      email: userSaved.email
+    });
 
     // Crear el token de acceso
     const token = await createAccessToken({
@@ -41,32 +49,45 @@ export const register = async (req, res) => {
       sameSite: "none",
     });
 
-    // Responder con los datos del usuario y el token
     res.json({
       id: userSaved._id,
       username: userSaved.username,
       email: userSaved.email,
-      token, // Devolver el token también
+      token,
     });
   } catch (error) {
+    console.error('❌ Error en registro:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// Función para iniciar sesión
+// Función de login
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    
+    console.log('🔑 Intento de login:', { 
+      email,
+      passwordLength: password.length 
+    });
 
     // Buscar el usuario por correo
     const userFound = await User.findOne({ email });
+    console.log('🔍 Usuario encontrado:', userFound ? {
+      id: userFound._id,
+      username: userFound.username,
+      email: userFound.email
+    } : null);
+
     if (!userFound)
       return res.status(400).json({
         message: ["El correo electrónico no existe"],
       });
 
-    // Comparar la contraseña ingresada con la almacenada
-    const isMatch = await bcrypt.compare(password, userFound.password);
+    // Usar el método comparePassword del modelo
+    const isMatch = await userFound.comparePassword(password);
+    console.log('🔐 Resultado de comparación:', isMatch);
+
     if (!isMatch) {
       return res.status(400).json({
         message: ["La contraseña es incorrecta"],
@@ -86,14 +107,14 @@ export const login = async (req, res) => {
       sameSite: "none",
     });
 
-    // Responder con los datos del usuario y el token
     res.json({
       id: userFound._id,
       username: userFound.username,
       email: userFound.email,
-      token, // Devolver el token también
+      token,
     });
   } catch (error) {
+    console.error('❌ Error en login:', error);
     return res.status(500).json({ message: error.message });
   }
 };

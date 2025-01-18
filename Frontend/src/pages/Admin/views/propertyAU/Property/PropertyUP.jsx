@@ -5,7 +5,8 @@ import { useAuth } from "../../../../../context/AuthContext";
 import PropertyImg from "./PropertyImg";
 import PropertyFormUP from "./PropertyFormUP";
 import Caracteristicas from "./PropertyCaract";
- 
+import PropertyVideo from "./PropertyVideo";
+
 const PropertyUP = () => {
   const { id } = useParams();
   const { isAuthenticated } = useAuth();
@@ -14,7 +15,6 @@ const PropertyUP = () => {
 
   const [formData, setFormData] = useState({
     title: "",
-    codigo: "",
     pais: "",
     departamento: "",
     ciudad: "",
@@ -35,6 +35,7 @@ const PropertyUP = () => {
     valorAdministracion: "",
     anioConstruccion: "",
     description: "",
+    propietario: "",
   });
 
   const [images, setImages] = useState([]);
@@ -43,7 +44,7 @@ const PropertyUP = () => {
     internas: [],
     externas: [],
   });
-
+  const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -87,6 +88,7 @@ const PropertyUP = () => {
       }));
 
       setImages(propertyData.images || []);
+      setVideos(propertyData.videos || []);
 
       const internas = propertyData.caracteristicas
         .filter((c) => c.type === "interna")
@@ -121,11 +123,14 @@ const PropertyUP = () => {
     setImagesToDelete(toDelete);
   }, []);
 
+  const handleVideosChange = useCallback((newVideos) => {
+    setVideos(newVideos);
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
   
     try {
-      // Validaciones iniciales
       if (!formData.title || !formData.ciudad || !formData.costo) {
         throw new Error("Por favor complete todos los campos requeridos");
       }
@@ -137,10 +142,8 @@ const PropertyUP = () => {
       setIsSubmitting(true);
       setError(null);
   
-      // Preparar datos para enviar
       const dataToSend = {
         ...formData,
-        // Conversión de valores numéricos
         areaConstruida: Number(formData.areaConstruida) || 0,
         areaTerreno: Number(formData.areaTerreno) || 0,
         areaPrivada: Number(formData.areaPrivada) || 0,
@@ -152,8 +155,7 @@ const PropertyUP = () => {
         piso: Number(formData.piso) || 0,
         valorAdministracion: Number(formData.valorAdministracion) || 0,
         anioConstruccion: Number(formData.anioConstruccion) || 0,
-  
-        // Preparar características
+        
         caracteristicas: [
           ...selectedCaracteristicas.internas.map((name) => ({
             name,
@@ -164,10 +166,10 @@ const PropertyUP = () => {
             type: "externa",
           })),
         ],
-  
-        // Manejo actualizado de imágenes
+
+        videos: videos,
+        
         images: images.map(img => {
-          // Para imágenes nuevas (con datos base64)
           if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
             return {
               public_id: img.public_id,
@@ -176,7 +178,6 @@ const PropertyUP = () => {
               resource_type: 'image'
             };
           }
-          // Para imágenes existentes
           return {
             public_id: img.public_id,
             secure_url: img.secure_url,
@@ -184,20 +185,15 @@ const PropertyUP = () => {
           };
         }),
         
-        // IDs de imágenes a eliminar
         imagesToDelete: imagesToDelete.filter(id => !id.startsWith('temp_')),
-        
-        // Flags adicionales
         disponible: Boolean(formData.disponible),
         updatedAt: new Date().toISOString()
       };
   
-      // Validación de imágenes
       if (dataToSend.images.length === 0) {
         throw new Error("Debe incluir al menos una imagen");
       }
   
-      // Validar tamaño máximo de imágenes base64
       const maxSize = 5 * 1024 * 1024; // 5MB
       const oversizedImages = dataToSend.images.filter(img => 
         img.file && img.file.length * 0.75 > maxSize
@@ -207,8 +203,7 @@ const PropertyUP = () => {
         throw new Error("Una o más imágenes exceden el tamaño máximo permitido (5MB)");
       }
   
-      // Llamada al servidor con manejo de timeout
-      const timeoutDuration = 30000; // 30 segundos
+      const timeoutDuration = 30000;
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Tiempo de espera agotado")), timeoutDuration)
       );
@@ -218,12 +213,10 @@ const PropertyUP = () => {
   
       if (response && response.data) {
         setSuccess(true);
-        // Limpiar estados
         setImages([]);
         setImagesToDelete([]);
         setError(null);
         
-        // Redireccionar después de un breve delay
         setTimeout(() => {
           navigate("/properties");
         }, 1500);
@@ -236,7 +229,6 @@ const PropertyUP = () => {
       setError(err.message || "Error al actualizar la propiedad");
       setSuccess(false);
       
-      // Mostrar error en la UI
       if (err.response?.data?.message) {
         setError(`Error del servidor: ${err.response.data.message}`);
       } else {
@@ -247,7 +239,6 @@ const PropertyUP = () => {
       setIsSubmitting(false);
     }
   };
-  
 
   if (loading) {
     return (
@@ -278,6 +269,8 @@ const PropertyUP = () => {
           <PropertyFormUP
             initialData={formData}
             onChange={handleFormDataChange}
+            isSubmitting={isSubmitting}
+            isUpdate={true}
           />
         </div>
 
@@ -294,6 +287,14 @@ const PropertyUP = () => {
           <PropertyImg
             initialImages={images}
             onImageUpdate={handleImageUpdate}
+          />
+        </div>
+
+        <div className="bg-white shadow-sm rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-6">Videos de la Propiedad</h2>
+          <PropertyVideo
+            videos={videos}
+            onVideosChange={handleVideosChange}
           />
         </div>
 

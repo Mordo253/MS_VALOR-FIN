@@ -45,6 +45,8 @@ const caracteristicaSchema = new mongoose.Schema({
 const propertySchema = new mongoose.Schema({
   title: { type: String, required: true },
   codigo: { type: String, required: true, unique: true },
+  creador: { type: String, required: true, unique: true },
+  propietario: { type: String, required: true, unique: true },
   pais: { type: String, required: true },
   departamento: { type: String, required: true },
   ciudad: { type: String, required: true },
@@ -79,6 +81,19 @@ const propertySchema = new mongoose.Schema({
   },
   description: { type: String, required: true },
   images: { type: [cloudinaryImageSchema], default: [] },
+  video: {
+    type: [String],
+    validate: {
+      validator: function (value) {
+        return value.every(url =>
+          /^https:\/\/(www\.)?youtube\.com\/watch\?v=[\w-]{11}$/.test(url) ||
+          /^https:\/\/youtu\.be\/[\w-]{11}$/.test(url)
+        );
+      },
+      message: 'Uno o más enlaces de video no son válidos o no pertenecen a YouTube.'
+    },
+    default: []
+  },
   imageLimit: { type: Number, default: 15 }
 }, {
   timestamps: true

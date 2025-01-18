@@ -5,6 +5,7 @@ import { useAuth } from "../../../../context/AuthContext";
 import PropertyImg from "./Property/PropertyImg";
 import PropertyFormUP from "./Property/PropertyFormUP";
 import Caracteristicas from "./Property/PropertyCaract";
+import PropertyVideo from "./Property/PropertyVideo";
 
 const PropertyForm = () => {
   const { id } = useParams();
@@ -35,9 +36,12 @@ const PropertyForm = () => {
     valorAdministracion: "",
     anioConstruccion: "",
     description: "",
+    creador: "",
+    propietario: "",
   });
  
   const [images, setImages] = useState([]);
+  const [videos, setVideos] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [selectedCaracteristicas, setSelectedCaracteristicas] = useState({
     internas: [],
@@ -64,12 +68,27 @@ const PropertyForm = () => {
     setImagesToDelete(toDelete);
   }, []);
 
+  const handleVideosChange = useCallback((updatedVideos) => {
+    setVideos(updatedVideos);
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      if (!formData.title || !formData.ciudad || !formData.costo) {
-        throw new Error("Por favor complete todos los campos requeridos");
+      // Validaciones básicas
+      const requiredFields = [
+        'title', 'pais', 'departamento', 'ciudad', 'zona', 
+        'areaConstruida', 'areaTerreno', 'areaPrivada', 
+        'alcobas', 'costo', 'banos', 'garaje', 'estrato',
+        'piso', 'tipoInmueble', 'tipoNegocio', 'estado',
+        'valorAdministracion', 'anioConstruccion', 'description',
+        'propietario'
+      ];
+
+      const emptyFields = requiredFields.filter(field => !formData[field]);
+      if (emptyFields.length > 0) {
+        throw new Error(`Por favor complete los siguientes campos: ${emptyFields.join(', ')}`);
       }
 
       if (!selectedCaracteristicas.internas.length && !selectedCaracteristicas.externas.length) {
@@ -79,21 +98,25 @@ const PropertyForm = () => {
       setIsSubmitting(true);
       setError(null);
 
-      // Crear objeto JSON para enviar
       const dataToSend = {
         ...formData,
-        areaConstruida: Number(formData.areaConstruida) || 0,
-        areaTerreno: Number(formData.areaTerreno) || 0,
-        areaPrivada: Number(formData.areaPrivada) || 0,
-        alcobas: Number(formData.alcobas) || 0,
-        costo: Number(formData.costo) || 0,
-        banos: Number(formData.banos) || 0,
-        garaje: Number(formData.garaje) || 0,
-        estrato: Number(formData.estrato) || 0,
-        piso: Number(formData.piso) || 0,
-        valorAdministracion: Number(formData.valorAdministracion) || 0,
-        anioConstruccion: Number(formData.anioConstruccion) || 0,
-
+        // Convertir campos numéricos
+        areaConstruida: Number(formData.areaConstruida),
+        areaTerreno: Number(formData.areaTerreno),
+        areaPrivada: Number(formData.areaPrivada),
+        alcobas: Number(formData.alcobas),
+        costo: Number(formData.costo),
+        banos: Number(formData.banos),
+        garaje: Number(formData.garaje),
+        estrato: Number(formData.estrato),
+        piso: Number(formData.piso),
+        valorAdministracion: Number(formData.valorAdministracion),
+        anioConstruccion: Number(formData.anioConstruccion),
+        
+        // Arrays y booleanos
+        videos: videos,
+        disponible: Boolean(formData.disponible),
+        
         caracteristicas: [
           ...selectedCaracteristicas.internas.map(name => ({
             name,
@@ -105,9 +128,8 @@ const PropertyForm = () => {
           })),
         ],
 
-        // Manejo actualizado de imágenes
+        // Manejo de imágenes
         images: images.map(img => {
-          // Para imágenes nuevas (con datos base64)
           if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
             return {
               public_id: img.public_id,
@@ -116,7 +138,6 @@ const PropertyForm = () => {
               resource_type: 'image'
             };
           }
-          // Para imágenes existentes
           return {
             public_id: img.public_id,
             secure_url: img.secure_url,
@@ -124,37 +145,35 @@ const PropertyForm = () => {
           };
         }),
         
-        // IDs de imágenes a eliminar
         imagesToDelete: imagesToDelete.filter(id => !id.startsWith('temp_')),
         
-        // Flags adicionales
-        disponible: Boolean(formData.disponible),
-        updatedAt: new Date().toISOString()
+        // Metadatos
+        updatedAt: new Date().toISOString(),
+        
+        // Validaciones específicas
+        codigo: formData.codigo || `PROP-${Date.now()}`
       };
-  
-      // Validación de imágenes
+
+      // Validaciones adicionales
       if (dataToSend.images.length === 0) {
         throw new Error("Debe incluir al menos una imagen");
       }
-  
-      // Validar tamaño máximo de imágenes base64
+
+      // Validación de tamaño de imágenes
       const maxSize = 5 * 1024 * 1024; // 5MB
       const oversizedImages = dataToSend.images.filter(img => 
         img.file && img.file.length * 0.75 > maxSize
       );
-  
       if (oversizedImages.length > 0) {
         throw new Error("Una o más imágenes exceden el tamaño máximo permitido (5MB)");
       }
-  
-      // Llamada al servidor con manejo de timeout
-      const timeoutDuration = 30000; // 30 segundos
+
+      // Manejo de timeout en la petición
+      const timeoutDuration = 30000;
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Tiempo de espera agotado")), timeoutDuration)
       );
-  
-      
-      // Debug: Log de los datos que se envían
+
       console.log("Datos procesados para enviar:", dataToSend);
 
       const responsePromise = createProperty(dataToSend);
@@ -164,6 +183,7 @@ const PropertyForm = () => {
         setSuccess(true);
         // Limpiar estados
         setImages([]);
+        setVideos([]);
         setImagesToDelete([]);
         setError(null);
         setTimeout(() => {
@@ -200,7 +220,8 @@ const PropertyForm = () => {
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
           <PropertyFormUP 
             initialData={formData} 
-            onChange={handleFormDataChange} 
+            onChange={handleFormDataChange}
+            isSubmitting={isSubmitting}
           />
         </div>
 
@@ -217,6 +238,14 @@ const PropertyForm = () => {
           <PropertyImg 
             initialImages={images} 
             onImageUpdate={handleImageUpdate} 
+          />
+        </div>
+
+        <div className="bg-white shadow-sm rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-6">Videos de la Propiedad</h2>
+          <PropertyVideo 
+            videos={videos}
+            onVideosChange={handleVideosChange}
           />
         </div>
 

@@ -11,16 +11,52 @@ import {
 } from 'react-share';
 import { Share2, Check } from 'lucide-react';
 
-// Componente ShareButton optimizado
+// Función auxiliar para obtener la primera imagen válida
+const getFirstValidImage = (images = []) => {
+  if (!Array.isArray(images) || images.length === 0) return null;
+  return images[0];
+};
+
+// Función auxiliar para transformar URLs de Cloudinary
+const getOptimizedImageUrl = (images = [], type = 'whatsapp') => {
+  const firstImage = getFirstValidImage(images);
+  if (!firstImage?.secure_url) return '';
+  
+  // Extraer la base URL y la versión
+  const baseUrlParts = firstImage.secure_url.split('/upload/');
+  if (baseUrlParts.length !== 2) return firstImage.secure_url;
+
+  // Configuraciones según el tipo de compartido
+  const transformations = {
+    whatsapp: 'w_1200,h_630,c_fill,g_auto',  // Optimizado para WhatsApp
+    facebook: 'w_1200,h_630,c_fill,g_auto',   // Optimizado para Facebook
+    twitter: 'w_1200,h_600,c_fill,g_auto',    // Optimizado para Twitter
+    default: 'w_1200,h_630,c_fill,g_auto'     // Configuración por defecto
+  };
+
+  const transform = transformations[type] || transformations.default;
+  return `${baseUrlParts[0]}/upload/${transform}/${baseUrlParts[1]}`;
+};
+
 const ShareButton = ({ component: ShareButtonComponent, icon: IconComponent, color, property }) => {
   const shareUrl = window.location.href;
-  const mainImageUrl = property.images[0]?.secure_url;
   const shareTitle = `${property.title} - ${property.codigo}`;
   const shareDescription = property.description || `${property.tipoInmueble} en ${property.ciudad}`;
   const priceFormatted = property.costo.toLocaleString();
   const locationFormatted = `${property.zona}, ${property.ciudad}, ${property.departamento}`;
 
-  // Mensajes personalizados por plataforma
+  // Obtener la imagen optimizada según el componente
+  const getOptimizedImage = () => {
+    if (ShareButtonComponent === WhatsappShareButton) {
+      return getOptimizedImageUrl(property.images, 'whatsapp');
+    } else if (ShareButtonComponent === FacebookShareButton) {
+      return getOptimizedImageUrl(property.images, 'facebook');
+    } else if (ShareButtonComponent === TwitterShareButton) {
+      return getOptimizedImageUrl(property.images, 'twitter');
+    }
+    return getOptimizedImageUrl(property.images, 'default');
+  };
+
   const customMessages = {
     facebook: `${shareTitle}\n${shareDescription}\nPrecio: $${priceFormatted}\nUbicación: ${locationFormatted}`,
     twitter: `${shareTitle} - MS DE VALOR`,
@@ -36,7 +72,7 @@ const ShareButton = ({ component: ShareButtonComponent, icon: IconComponent, col
       quote={customMessages.facebook}
       subject={`Propiedad ${property.codigo} - MS DE VALOR`}
       body={customMessages.email}
-      image={mainImageUrl}
+      image={getOptimizedImage()}
       hashtag="#MSDeValor"
       via="msdevalor"
     >
@@ -47,10 +83,8 @@ const ShareButton = ({ component: ShareButtonComponent, icon: IconComponent, col
   );
 };
 
-// Componente CustomShareButton con soporte de previsualización mejorado
 const CustomShareButton = ({ property }) => {
   const [copied, setCopied] = useState(false);
-  const mainImageUrl = property.images[0]?.secure_url;
   const shareUrl = window.location.href;
 
   useEffect(() => {
@@ -59,11 +93,7 @@ const CustomShareButton = ({ property }) => {
       document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"], link[rel="canonical"]')
         .forEach(tag => tag.remove());
 
-      // Agregar link canónico
-      const linkCanonical = document.createElement('link');
-      linkCanonical.rel = 'canonical';
-      linkCanonical.href = shareUrl;
-      document.head.appendChild(linkCanonical);
+      const optimizedImage = getOptimizedImageUrl(property.images, 'whatsapp');
 
       // Configurar meta tags para previsualización
       const metaTags = [
@@ -77,8 +107,8 @@ const CustomShareButton = ({ property }) => {
         { property: 'og:type', content: 'website' },
         { property: 'og:title', content: `${property.title} - ${property.codigo}` },
         { property: 'og:description', content: property.description || `${property.tipoInmueble} en ${property.ciudad}` },
-        { property: 'og:image', content: mainImageUrl },
-        { property: 'og:image:secure_url', content: mainImageUrl },
+        { property: 'og:image', content: optimizedImage },
+        { property: 'og:image:secure_url', content: optimizedImage },
         { property: 'og:image:width', content: '1200' },
         { property: 'og:image:height', content: '630' },
         { property: 'og:image:type', content: 'image/jpeg' },
@@ -94,7 +124,7 @@ const CustomShareButton = ({ property }) => {
         { name: 'twitter:creator', content: '@msdevalor' },
         { name: 'twitter:title', content: `${property.title} - ${property.codigo}` },
         { name: 'twitter:description', content: property.description || `${property.tipoInmueble} en ${property.ciudad}` },
-        { name: 'twitter:image', content: mainImageUrl },
+        { name: 'twitter:image', content: optimizedImage },
         { name: 'twitter:image:alt', content: property.title },
         { name: 'twitter:label1', content: 'Precio' },
         { name: 'twitter:data1', content: `$${property.costo.toLocaleString()} COP` },
@@ -112,6 +142,12 @@ const CustomShareButton = ({ property }) => {
         meta.setAttribute('content', content);
         document.head.appendChild(meta);
       });
+
+      // Agregar link canónico
+      const linkCanonical = document.createElement('link');
+      linkCanonical.rel = 'canonical';
+      linkCanonical.href = shareUrl;
+      document.head.appendChild(linkCanonical);
     };
 
     setupMetaTags();
@@ -121,7 +157,7 @@ const CustomShareButton = ({ property }) => {
       document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"], link[rel="canonical"]')
         .forEach(tag => tag.remove());
     };
-  }, [property, mainImageUrl, shareUrl]);
+  }, [property, shareUrl]);
 
   const handleShare = async () => {
     const shareData = {

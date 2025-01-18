@@ -75,7 +75,7 @@ export const Indicador = () => {
     const minute = now.getMinutes();
     
     if (hour === 8 && minute < 30) return '8AM';
-    if (hour === 12 && minute < 35) return '12PM';
+    if (hour === 13 && minute < 30) return '1PM';
     return null;
   };
 

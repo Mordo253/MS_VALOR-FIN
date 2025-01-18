@@ -70,7 +70,7 @@ export const PropertyProvider = ({ children }) => {
     try {
       console.log("Datos que se envían al backend:", propertyData);
   
-      // Procesar los datos numéricos
+      // Procesar los datos numéricos y otros campos
       const processedData = {
         ...propertyData,
         areaConstruida: Number(propertyData.areaConstruida) || 0,
@@ -83,13 +83,15 @@ export const PropertyProvider = ({ children }) => {
         estrato: Number(propertyData.estrato) || 0,
         piso: Number(propertyData.piso) || 0,
         valorAdministracion: Number(propertyData.valorAdministracion) || 0,
-        anioConstruccion: Number(propertyData.anioConstruccion) || 0
+        anioConstruccion: Number(propertyData.anioConstruccion) || 0,
+        video: propertyData.video || '', // URL del video
+        creador: propertyData.creador || 'Administrador', // Valor por defecto
+        propietario: propertyData.propietario || 'Desconocido' // Valor por defecto
       };
-
   
       console.log("Datos procesados antes de enviar:", processedData);
   
-      // Enviar los datos al backend como JSON
+      // Enviar los datos al backend
       const response = await axios.post(`${API_URL}/property/properties`, processedData, {
         headers: {
           "Content-Type": "application/json",
@@ -112,7 +114,6 @@ export const PropertyProvider = ({ children }) => {
   
       return { success: true, data: newProperty };
     } catch (error) {
-      // Manejo detallado de errores
       console.error("Error al crear propiedad:", error.response || error.message);
   
       const errorMessage = error.response?.data?.message || "Error al comunicarse con el servidor";
@@ -120,8 +121,6 @@ export const PropertyProvider = ({ children }) => {
       return { success: false, error: errorMessage };
     }
   };
-
-  
   
   
   // Obtener una propiedad específica
@@ -152,129 +151,79 @@ export const PropertyProvider = ({ children }) => {
     }
   };
 
-  // Actualizar propiedad
-const updateProperty = async (id, propertyData) => {
-  try {
-    console.log("Datos recibidos para actualizar:", propertyData);
-
-    // Procesar los datos numéricos y básicos
-    const processedData = {
-      ...propertyData,
-      areaConstruida: Number(propertyData.areaConstruida) || 0,
-      areaTerreno: Number(propertyData.areaTerreno) || 0,
-      areaPrivada: Number(propertyData.areaPrivada) || 0,
-      alcobas: Number(propertyData.alcobas) || 0,
-      costo: Number(propertyData.costo) || 0,
-      banos: Number(propertyData.banos) || 0,
-      garaje: Number(propertyData.garaje) || 0,
-      estrato: Number(propertyData.estrato) || 0,
-      piso: Number(propertyData.piso) || 0,
-      valorAdministracion: Number(propertyData.valorAdministracion) || 0,
-      anioConstruccion: Number(propertyData.anioConstruccion) || 0,
-      caracteristicas: propertyData.caracteristicas || [],
-      disponible: Boolean(propertyData.disponible),
-      updatedAt: new Date().toISOString(),
-      // Procesar imágenes
-      images: (propertyData.images || []).map(img => ({
-        public_id: img.public_id,
-        secure_url: img.secure_url,
-        file: img.file || null,
-        resource_type: img.resource_type || 'image'
-      })).filter(img => {
-        // Mantener solo imágenes válidas
-        if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
-          return true; // Imágenes nuevas con base64
+  const updateProperty = async (id, propertyData) => {
+    try {
+      console.log("Datos recibidos para actualizar:", propertyData);
+  
+      const processedData = {
+        ...propertyData,
+        areaConstruida: Number(propertyData.areaConstruida) || 0,
+        areaTerreno: Number(propertyData.areaTerreno) || 0,
+        areaPrivada: Number(propertyData.areaPrivada) || 0,
+        alcobas: Number(propertyData.alcobas) || 0,
+        costo: Number(propertyData.costo) || 0,
+        banos: Number(propertyData.banos) || 0,
+        garaje: Number(propertyData.garaje) || 0,
+        estrato: Number(propertyData.estrato) || 0,
+        piso: Number(propertyData.piso) || 0,
+        valorAdministracion: Number(propertyData.valorAdministracion) || 0,
+        anioConstruccion: Number(propertyData.anioConstruccion) || 0,
+        video: propertyData.video || '', // URL del video
+        creador: propertyData.creador || 'Administrador', // Valor por defecto
+        propietario: propertyData.propietario || 'Desconocido', // Valor por defecto
+        updatedAt: new Date().toISOString(),
+        images: (propertyData.images || []).map(img => ({
+          public_id: img.public_id,
+          secure_url: img.secure_url,
+          file: img.file || null,
+          resource_type: img.resource_type || 'image',
+        })).filter(img => img.file || img.secure_url),
+        imagesToDelete: (propertyData.imagesToDelete || []).filter(id => 
+          typeof id === 'string' && !id.startsWith('temp_')
+        )
+      };
+  
+      console.log("Datos procesados antes de enviar:", processedData);
+  
+      // Configurar la petición
+      const response = await axios.put(
+        `${API_URL}/property/properties/${id}`,
+        processedData,
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 30000,
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
         }
-        if (img.secure_url && !img.secure_url.startsWith('blob:')) {
-          return true; // Imágenes existentes con URL válida
-        }
-        return false;
-      }),
-      // Imágenes a eliminar (filtrar IDs temporales)
-      imagesToDelete: (propertyData.imagesToDelete || []).filter(id => 
-        typeof id === 'string' && !id.startsWith('temp_')
-      )
-    };
-
-    // Validaciones adicionales
-    if (!processedData.images || processedData.images.length === 0) {
-      throw new Error('Debe incluir al menos una imagen');
-    }
-
-    // Verificar tamaño de imágenes base64
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    const oversizedImages = processedData.images.filter(img => 
-      img.file && typeof img.file === 'string' && 
-      (img.file.length * 0.75) > maxSize
-    );
-
-    if (oversizedImages.length > 0) {
-      throw new Error('Una o más imágenes exceden el tamaño máximo permitido (5MB)');
-    }
-
-    // Log seguro (sin mostrar datos base64 completos)
-    console.log("Datos procesados antes de enviar:", {
-      ...processedData,
-      images: processedData.images.map(img => ({
-        ...img,
-        file: img.file ? 'base64_data_present' : 'no_file',
-        secure_url: img.secure_url ? 'url_present' : 'no_url'
-      }))
-    });
-
-    // Configurar la petición con timeout y límites adecuados
-    const response = await axios.put(
-      `${API_URL}/property/properties/${id}`, 
-      processedData,
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000, // 30 segundos
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity
+      );
+  
+      if (!response.data || !response.data.data) {
+        throw new Error('La respuesta del servidor no contiene los datos esperados');
       }
-    );
-
-    // Verificar respuesta
-    if (!response.data || !response.data.data) {
-      console.error('Respuesta del servidor incompleta:', response);
-      throw new Error('La respuesta del servidor no contiene los datos esperados');
+  
+      const updatedProperty = response.data.data;
+  
+      // Actualizar estados
+      setProperties((prev) => prev.map(p => p._id === updatedProperty._id ? updatedProperty : p));
+      setFilteredProperties((prev) => prev.map(p => p._id === updatedProperty._id ? updatedProperty : p));
+  
+      return response.data;
+    } catch (error) {
+      console.error('Error al actualizar propiedad:', error.message || error.response);
+  
+      // Manejar errores específicos
+      if (error.response?.status === 413) {
+        throw new Error('Las imágenes son demasiado grandes. Por favor, reduzca su tamaño.');
+      } else if (error.code === 'ECONNABORTED') {
+        throw new Error('La operación tardó demasiado tiempo. Por favor, intente nuevamente.');
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else {
+        throw new Error('Error al actualizar la propiedad. Por favor, intente nuevamente.');
+      }
     }
-
-    const updatedProperty = response.data.data;
-
-    // Actualizar estados locales
-    setProperties(prevProperties =>
-      prevProperties.map(p => p._id === updatedProperty._id ? updatedProperty : p)
-    );
-
-    setFilteredProperties(prevFiltered =>
-      prevFiltered.map(p => p._id === updatedProperty._id ? updatedProperty : p)
-    );
-
-    return response.data;
-
-  } catch (error) {
-    console.error('Error al actualizar propiedad:', error);
-    console.error('Detalles del error:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
-    });
-
-    // Manejar errores específicos
-    if (error.response?.status === 413) {
-      throw new Error('Las imágenes son demasiado grandes. Por favor, reduzca su tamaño.');
-    } else if (error.code === 'ECONNABORTED') {
-      throw new Error('La operación tardó demasiado tiempo. Por favor, intente nuevamente.');
-    } else if (error.response?.data?.message) {
-      throw new Error(error.response.data.message);
-    } else {
-      throw new Error('Error al actualizar la propiedad. Por favor, intente nuevamente.');
-    }
-  }
-};
+  };
+  
 
   // Eliminar propiedad
   const deleteProperty = async (id) => {
