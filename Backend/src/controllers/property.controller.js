@@ -9,7 +9,7 @@ export const createProperty = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { images, caracteristicas, video, creador, propietario, ...propertyData } = req.body;
+    const { images, caracteristicas, videos, creador, propietario, ...propertyData } = req.body;
 
     // Validaciones iniciales
     if (!propertyData.title || !propertyData.ciudad || !propertyData.costo) {
@@ -24,8 +24,9 @@ export const createProperty = async (req, res) => {
       throw new Error("Debe incluir al menos una imagen");
     }
 
-    if (video && (!Array.isArray(video) || video.some((video) => typeof video !== "string"))) {
-      throw new Error("El campo video debe ser un arreglo de enlaces válidos");
+    // Nueva validación para videos como objetos
+    if (videos && (!Array.isArray(videos) || videos.some(video => !video.id || !video.url || typeof video.url !== "string"))) {
+      throw new Error("El campo videos debe ser un arreglo de objetos con id y url válidos");
     }
 
     // Validar características
@@ -94,7 +95,7 @@ export const createProperty = async (req, res) => {
       codigo: newCode,
       creador,
       propietario,
-      video: video || [],
+      videos: videos || [], // Ahora videos es un array de objetos {id, url}
       areaConstruida: Number(propertyData.areaConstruida) || 0,
       areaTerreno: Number(propertyData.areaTerreno) || 0,
       areaPrivada: Number(propertyData.areaPrivada) || 0,
@@ -136,39 +137,12 @@ export const createProperty = async (req, res) => {
   }
 };
 
-export const getAllProperties = async (req, res) => {
-  try {
-    const properties = await Property.find();
-    res.status(200).json({ success: true, data: properties });
-  } catch (error) {
-    console.error('Error en getAllProperties:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-export const getPropertyById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, message: 'ID de propiedad inválido' });
-    }
-    const property = await Property.findById(id);
-    if (!property) {
-      return res.status(404).json({ success: false, message: 'Propiedad no encontrada' });
-    }
-    res.status(200).json({ success: true, data: property });
-  } catch (error) {
-    console.error('Error en getPropertyById:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 // Actualizar propiedad
 export const updateProperty = async (req, res) => {
   try {
     const { id: propertyId } = req.params;
     const {
-      video,
+      videos,
       creador,
       propietario,
       title,
@@ -201,17 +175,58 @@ export const updateProperty = async (req, res) => {
       return res.status(404).json({ message: "Propiedad no encontrada" });
     }
 
-    // Validaciones y actualizaciones de los nuevos campos
-    if (video && Array.isArray(video)) property.video = video;
+    // Validación de videos como objetos en la actualización
+    if (videos && Array.isArray(videos)) {
+      if (videos.some(video => !video.id || !video.url || typeof video.url !== "string")) {
+        throw new Error("El campo videos debe ser un arreglo de objetos con id y url válidos");
+      }
+      property.videos = videos;
+    }
+
     if (creador) property.creador = creador;
     if (propietario) property.propietario = propietario;
 
     // Resto del procesamiento permanece igual...
+    
+    await property.save();
+    res.json({
+      success: true,
+      message: "Propiedad actualizada exitosamente",
+      data: property
+    });
   } catch (error) {
     console.error("Error al actualizar la propiedad:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getAllProperties = async (req, res) => {
+  try {
+    const properties = await Property.find();
+    res.status(200).json({ success: true, data: properties });
+  } catch (error) {
+    console.error('Error en getAllProperties:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getPropertyById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'ID de propiedad inválido' });
+    }
+    const property = await Property.findById(id);
+    if (!property) {
+      return res.status(404).json({ success: false, message: 'Propiedad no encontrada' });
+    }
+    res.status(200).json({ success: true, data: property });
+  } catch (error) {
+    console.error('Error en getPropertyById:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 
 // Otras funciones permanecen igual...
 

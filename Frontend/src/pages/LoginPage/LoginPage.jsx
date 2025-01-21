@@ -102,7 +102,7 @@ export const LoginPage=()=> {
 
       {/* Footer Text */}
       <div className="text-center text-gray-400 pb-8">
-        <p>En MS De Valor encuentras todo en un</p>
+        <p>En MS De Valor encuentras todo en un solo lugar</p>
       </div>
     </div>
   );

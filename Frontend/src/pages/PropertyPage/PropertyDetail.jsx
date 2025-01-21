@@ -28,6 +28,10 @@ import {
   WhatsappIcon,
   EmailIcon
 } from 'react-share';
+import AdvancedTooltip from '../../components/ui/Tooltips/AdvancedTooltip';
+import defaultImg from "../../assets/Default_avatar.jpeg";
+import angImg from "../../assets/Angela_Rua.jpg";
+import jfImg  from "../../assets/Juan_Fernando.png";
 
 // Componente de Meta Tags
 const MetaTags = ({ property, optimizedImageUrl }) => (
@@ -71,6 +75,37 @@ const MetaTags = ({ property, optimizedImageUrl }) => (
   </Helmet>
 );
 
+//Miembros
+const teamMembers = [
+  {
+    name: 'Juan Fernando González',
+    role: 'Director',
+    image: `../${jfImg}`,
+    bio: 'Lorem ipsum, dolor sit amet consect',
+    WhatsApp: 'https://wa.me/573122259584?text=Hola Juan Fernando, estoy interesad@ en lo que ofrece MS De Valor',
+  },
+  {
+    name: 'Claudia González',
+    role: 'Asesora financiera',
+    image: `../${defaultImg}`,
+    bio: 'Lorem ipsum, dolor sit amet consect',
+    WhatsApp: 'https://wa.me/573160420188?text=Hola Claudia, estoy interesad@ en lo que ofrece MS De Valor',
+  },
+  {
+    name: 'Carolina Montoya',
+    role: 'Asesora financiera',
+    image: `../${defaultImg}`,
+    bio: 'Lorem ipsum, dolor sit amet consect',
+    WhatsApp: 'https://wa.me/573160420188?text=Hola Claudia, estoy interesad@ en lo que ofrece MS De Valor',
+  },
+  {
+    name: 'Angela Rua',
+    role: 'Asesora financiera',
+    image: `../${angImg}`,
+    bio: 'Lorem ipsum, dolor sit amet consect',
+    WhatsApp: 'https://wa.me/573160420188?text=Hola Claudia, estoy interesad@ en lo que ofrece MS De Valor',
+  },
+];
 // Funciones auxiliares
 const shouldHideValue = (value) => {
   if (value === null || value === undefined) return true;
@@ -362,9 +397,9 @@ export const PropertyDetails = () => {
 
               {/* Miniaturas */}
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {property.images.map((image, index) => (
+              {property.images.map((image, index) => (
                   <button
-                    key={index}
+                    key={image.secure_url || index}
                     onClick={() => handleImageClick(index)}
                     className={`
                       flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden 
@@ -398,7 +433,27 @@ export const PropertyDetails = () => {
 
                 {/* Título y código */}
                 <h1 className="text-2xl font-bold mb-2">{property.title}</h1>
-                <p className="text-lg font-semibold text-gray-600 mb-4">{property.codigo}</p>
+                  {(() => {
+                    const member = teamMembers.find(m => m.name === property.creador);
+                    
+                    if (member) {
+                      return (
+                        <AdvancedTooltip
+                          title={member.name}
+                          content={member.bio}
+                          image={member.image}
+                          link={member.WhatsApp}
+                          theme="dark"
+                          position="bottom"
+                          width="250px"
+                          trigger="click"
+                        >
+                          <p className="text-lg font-semibold text-gray-600 mb-4">{property.codigo}</p>
+                        </AdvancedTooltip>
+                      );
+                    }
+                    return null;
+                  })()}
 
                 {/* Ubicación */}
                 {location && (
@@ -496,9 +551,9 @@ export const PropertyDetails = () => {
                       <h3 className="font-semibold mb-4">Internas</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {caracteristicasInternas
-                          .filter(caracteristica => !shouldHideValue(caracteristica))
-                          .map((caracteristica, index) => (
-                            <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                        .filter(caracteristica => !shouldHideValue(caracteristica))
+                        .map((caracteristica) => (
+                            <div key={caracteristica} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                               <div className="w-2 h-2 rounded-full bg-blue-600" />
                               <span className="text-gray-700">{caracteristica}</span>
                             </div>
@@ -514,8 +569,8 @@ export const PropertyDetails = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {caracteristicasExternas
                           .filter(caracteristica => !shouldHideValue(caracteristica))
-                          .map((caracteristica, index) => (
-                            <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                          .map((caracteristica) => (
+                              <div key={caracteristica} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                               <div className="w-2 h-2 rounded-full bg-blue-600" />
                               <span className="text-gray-700">{caracteristica}</span>
                             </div>
@@ -526,10 +581,32 @@ export const PropertyDetails = () => {
                 </div>
               </div>
             )}
-          </div>
+
+            {/* Videos */}
+            <div className="bg-white rounded-xl p-6 shadow-sm mt-6">
+              <h2 className="text-xl font-semibold mb-6">Videos de la Propiedad</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {property.videos && property.videos.length > 0 ? (
+                  property.videos.map((video) => (
+                    <div key={video.public_id} className="relative group">
+                      <iframe
+                        className="w-full h-48 rounded-lg"
+                        src={`https://www.youtube.com/embed/${video.id}`}
+                        title={`Video ${video.id}`}
+                        frameBorder="0"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  ))
+                ) : (
+                  <p>No hay videos disponibles para esta propiedad.</p>
+                )}
+              </div>
+            </div>
         </div>
-      </>
+      </div>
+    </>
     );
   };
   
-  export default PropertyDetails;
+export default PropertyDetails;

@@ -81,17 +81,11 @@ const propertySchema = new mongoose.Schema({
   },
   description: { type: String, required: true },
   images: { type: [cloudinaryImageSchema], default: [] },
-  video: {
-    type: [String],
-    validate: {
-      validator: function (value) {
-        return value.every(url =>
-          /^https:\/\/(www\.)?youtube\.com\/watch\?v=[\w-]{11}$/.test(url) ||
-          /^https:\/\/youtu\.be\/[\w-]{11}$/.test(url)
-        );
-      },
-      message: 'Uno o más enlaces de video no son válidos o no pertenecen a YouTube.'
-    },
+  videos: {
+    type: [{
+      id: String,
+      url: String
+    }],
     default: []
   },
   imageLimit: { type: Number, default: 15 }

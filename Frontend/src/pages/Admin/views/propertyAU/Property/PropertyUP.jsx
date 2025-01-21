@@ -45,6 +45,7 @@ const PropertyUP = () => {
     externas: [],
   });
   const [videos, setVideos] = useState([]);
+  const [videosToDelete, setVideosToDelete] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -88,7 +89,14 @@ const PropertyUP = () => {
       }));
 
       setImages(propertyData.images || []);
-      setVideos(propertyData.videos || []);
+      
+      // Procesar videos iniciales
+      const processedVideos = propertyData.videos?.map(video => ({
+        ...video,
+        public_id: video.public_id || `existing_${Date.now()}_${video.id}`,
+        isNew: false
+      })) || [];
+      setVideos(processedVideos);
 
       const internas = propertyData.caracteristicas
         .filter((c) => c.type === "interna")
@@ -123,8 +131,9 @@ const PropertyUP = () => {
     setImagesToDelete(toDelete);
   }, []);
 
-  const handleVideosChange = useCallback((newVideos) => {
-    setVideos(newVideos);
+  const handleVideoUpdate = useCallback(({ videos: updatedVideos, videosToDelete: toDelete }) => {
+    setVideos(updatedVideos);
+    setVideosToDelete(toDelete);
   }, []);
 
   const handleSubmit = async (e) => {
@@ -167,7 +176,14 @@ const PropertyUP = () => {
           })),
         ],
 
-        videos: videos,
+        // Videos actualizados
+        videos: videos.map(video => ({
+          id: video.id,
+          url: video.url,
+          public_id: video.public_id,
+          isNew: video.isNew
+        })),
+        videosToDelete: videosToDelete.filter(id => !id.startsWith('temp_')),
         
         images: images.map(img => {
           if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
@@ -215,6 +231,8 @@ const PropertyUP = () => {
         setSuccess(true);
         setImages([]);
         setImagesToDelete([]);
+        setVideos([]);
+        setVideosToDelete([]);
         setError(null);
         
         setTimeout(() => {
@@ -293,8 +311,8 @@ const PropertyUP = () => {
         <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-6">Videos de la Propiedad</h2>
           <PropertyVideo
-            videos={videos}
-            onVideosChange={handleVideosChange}
+            initialVideos={videos}
+            onVideoUpdate={handleVideoUpdate}
           />
         </div>
 

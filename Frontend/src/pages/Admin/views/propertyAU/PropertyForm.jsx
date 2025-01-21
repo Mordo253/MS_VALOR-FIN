@@ -36,12 +36,14 @@ const PropertyForm = () => {
     valorAdministracion: "",
     anioConstruccion: "",
     description: "",
+    videos: "",
     creador: "",
     propietario: "",
   });
- 
+
   const [images, setImages] = useState([]);
   const [videos, setVideos] = useState([]);
+  const [videosToDelete, setVideosToDelete] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [selectedCaracteristicas, setSelectedCaracteristicas] = useState({
     internas: [],
@@ -51,7 +53,7 @@ const PropertyForm = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
- 
+
   const handleFormDataChange = useCallback((newData) => {
     setFormData((prevData) => ({
       ...prevData,
@@ -68,8 +70,9 @@ const PropertyForm = () => {
     setImagesToDelete(toDelete);
   }, []);
 
-  const handleVideosChange = useCallback((updatedVideos) => {
+  const handleVideoUpdate = useCallback(({ videos: updatedVideos, videosToDelete: toDelete }) => {
     setVideos(updatedVideos);
+    setVideosToDelete(toDelete);
   }, []);
 
   const handleSubmit = async (e) => {
@@ -78,17 +81,32 @@ const PropertyForm = () => {
     try {
       // Validaciones básicas
       const requiredFields = [
-        'title', 'pais', 'departamento', 'ciudad', 'zona', 
-        'areaConstruida', 'areaTerreno', 'areaPrivada', 
-        'alcobas', 'costo', 'banos', 'garaje', 'estrato',
-        'piso', 'tipoInmueble', 'tipoNegocio', 'estado',
-        'valorAdministracion', 'anioConstruccion', 'description',
-        'propietario'
+        "title",
+        "pais",
+        "departamento",
+        "ciudad",
+        "zona",
+        "areaConstruida",
+        "areaTerreno",
+        "areaPrivada",
+        "alcobas",
+        "costo",
+        "banos",
+        "garaje",
+        "estrato",
+        "piso",
+        "tipoInmueble",
+        "tipoNegocio",
+        "estado",
+        "valorAdministracion",
+        "anioConstruccion",
+        "description",
+        "propietario",
       ];
 
-      const emptyFields = requiredFields.filter(field => !formData[field]);
+      const emptyFields = requiredFields.filter((field) => !formData[field]);
       if (emptyFields.length > 0) {
-        throw new Error(`Por favor complete los siguientes campos: ${emptyFields.join(', ')}`);
+        throw new Error(`Por favor complete los siguientes campos: ${emptyFields.join(", ")}`);
       }
 
       if (!selectedCaracteristicas.internas.length && !selectedCaracteristicas.externas.length) {
@@ -100,7 +118,6 @@ const PropertyForm = () => {
 
       const dataToSend = {
         ...formData,
-        // Convertir campos numéricos
         areaConstruida: Number(formData.areaConstruida),
         areaTerreno: Number(formData.areaTerreno),
         areaPrivada: Number(formData.areaPrivada),
@@ -112,78 +129,59 @@ const PropertyForm = () => {
         piso: Number(formData.piso),
         valorAdministracion: Number(formData.valorAdministracion),
         anioConstruccion: Number(formData.anioConstruccion),
-        
-        // Arrays y booleanos
-        videos: videos,
         disponible: Boolean(formData.disponible),
-        
         caracteristicas: [
-          ...selectedCaracteristicas.internas.map(name => ({
+          ...selectedCaracteristicas.internas.map((name) => ({
             name,
             type: "interna",
           })),
-          ...selectedCaracteristicas.externas.map(name => ({
+          ...selectedCaracteristicas.externas.map((name) => ({
             name,
             type: "externa",
           })),
         ],
-
-        // Manejo de imágenes
-        images: images.map(img => {
-          if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
+        // Actualización del manejo de videos
+        videos: videos.map(video => ({
+          id: video.id,
+          url: video.url,
+          public_id: video.public_id,
+          isNew: video.isNew
+        })),
+        videosToDelete: videosToDelete.filter(id => !id.startsWith('temp_')),
+        
+        images: images.map((img) => {
+          if (img.file && typeof img.file === "string" && img.file.startsWith("data:")) {
             return {
               public_id: img.public_id,
               secure_url: img.secure_url,
               file: img.file,
-              resource_type: 'image'
+              resource_type: "image",
             };
           }
           return {
             public_id: img.public_id,
             secure_url: img.secure_url,
-            resource_type: img.resource_type
+            resource_type: img.resource_type,
           };
         }),
-        
-        imagesToDelete: imagesToDelete.filter(id => !id.startsWith('temp_')),
-        
-        // Metadatos
+        imagesToDelete: imagesToDelete.filter((id) => !id.startsWith("temp_")),
         updatedAt: new Date().toISOString(),
-        
-        // Validaciones específicas
-        codigo: formData.codigo || `PROP-${Date.now()}`
+        codigo: formData.codigo || `PROP-${Date.now()}`,
       };
 
-      // Validaciones adicionales
       if (dataToSend.images.length === 0) {
         throw new Error("Debe incluir al menos una imagen");
       }
 
-      // Validación de tamaño de imágenes
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      const oversizedImages = dataToSend.images.filter(img => 
-        img.file && img.file.length * 0.75 > maxSize
-      );
-      if (oversizedImages.length > 0) {
-        throw new Error("Una o más imágenes exceden el tamaño máximo permitido (5MB)");
-      }
-
-      // Manejo de timeout en la petición
-      const timeoutDuration = 30000;
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Tiempo de espera agotado")), timeoutDuration)
-      );
-
       console.log("Datos procesados para enviar:", dataToSend);
 
-      const responsePromise = createProperty(dataToSend);
-      const response = await Promise.race([responsePromise, timeoutPromise]);
+      const response = await createProperty(dataToSend);
 
       if (response && response.data) {
         setSuccess(true);
-        // Limpiar estados
         setImages([]);
         setVideos([]);
+        setVideosToDelete([]);
         setImagesToDelete([]);
         setError(null);
         setTimeout(() => {
@@ -199,7 +197,7 @@ const PropertyForm = () => {
       setIsSubmitting(false);
     }
   };
- 
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Crear Propiedad</h1>
@@ -218,8 +216,8 @@ const PropertyForm = () => {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-          <PropertyFormUP 
-            initialData={formData} 
+          <PropertyFormUP
+            initialData={formData}
             onChange={handleFormDataChange}
             isSubmitting={isSubmitting}
           />
@@ -235,18 +233,12 @@ const PropertyForm = () => {
 
         <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-6">Imágenes de la Propiedad</h2>
-          <PropertyImg 
-            initialImages={images} 
-            onImageUpdate={handleImageUpdate} 
-          />
+          <PropertyImg initialImages={images} onImageUpdate={handleImageUpdate} />
         </div>
 
         <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-6">Videos de la Propiedad</h2>
-          <PropertyVideo 
-            videos={videos}
-            onVideosChange={handleVideosChange}
-          />
+          <PropertyVideo initialVideos={videos} onVideoUpdate={handleVideoUpdate} />
         </div>
 
         <div className="flex justify-end">

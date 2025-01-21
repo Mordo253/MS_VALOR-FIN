@@ -1,84 +1,163 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 
-const PropertyVideo = ({ videos = [], onVideosChange }) => {
-  const [videoUrls, setVideoUrls] = useState(videos); // URLs actuales de videos
-  const [newVideo, setNewVideo] = useState("");
+const PropertyVideo = ({ initialVideos = [], onVideoUpdate }) => {
+  const [videos, setVideos] = useState([]);
+  const [videosToDelete, setVideosToDelete] = useState([]);
+  const [newVideoUrl, setNewVideoUrl] = useState("");
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Actualiza el estado interno si cambia la lista de videos proporcionada
-    if (videos) {
-      setVideoUrls(videos);
-    }
-  }, [videos]);
+  // Validar la URL del video
+  const validateVideoUrl = useCallback((url) => {
+    const youtubeRegex =
+      /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([\w\-]{11})$/;
+    return youtubeRegex.test(url);
+  }, []);
 
-  const handleAddVideo = () => {
-    if (!newVideo) return;
+  // Obtener el ID del video de YouTube
+  const extractYoutubeId = useCallback((url) => {
+    const match = url.match(
+      /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    );
+    return match ? match[1] : null;
+  }, []);
 
-    const isValidYoutubeUrl =
-      /^https:\/\/(www\.)?youtube\.com\/watch\?v=[\w-]{11}$/.test(newVideo) ||
-      /^https:\/\/youtu\.be\/[\w-]{11}$/.test(newVideo);
-
-    if (!isValidYoutubeUrl) {
-      alert("Por favor, ingresa un enlace válido de YouTube.");
+  // Agregar un nuevo video
+  const handleAddVideo = useCallback(() => {
+    if (!validateVideoUrl(newVideoUrl)) {
+      setError("La URL no es válida. Solo se aceptan enlaces de YouTube.");
       return;
     }
 
-    const updatedVideos = [...videoUrls, newVideo];
-    setVideoUrls(updatedVideos);
-    onVideosChange(updatedVideos); // Notifica al componente padre
-    setNewVideo(""); // Limpia el campo de entrada
-  };
+    const videoId = extractYoutubeId(newVideoUrl);
+    if (!videoId) {
+      setError("No se pudo obtener el ID del video de YouTube.");
+      return;
+    }
 
-  const handleRemoveVideo = (index) => {
-    const updatedVideos = videoUrls.filter((_, i) => i !== index);
-    setVideoUrls(updatedVideos);
-    onVideosChange(updatedVideos); // Notifica al componente padre
-  };
+    setVideos((prev) => [
+      ...prev,
+      {
+        id: videoId,
+        url: newVideoUrl,
+        isNew: true,
+        public_id: `temp_${Date.now()}_${videoId}`
+      }
+    ]);
+    setNewVideoUrl("");
+    setError(null);
+  }, [newVideoUrl, validateVideoUrl, extractYoutubeId]);
+
+  // Eliminar un video
+  const handleDeleteVideo = useCallback((publicId) => {
+    setVideos((prev) => {
+      const updatedVideos = prev.filter((video) => video.public_id !== publicId);
+      if (!publicId.startsWith('temp_')) {
+        setVideosToDelete((prevToDelete) => [...prevToDelete, publicId]);
+      }
+      return updatedVideos;
+    });
+  }, []);
+
+  // Inicializar videos existentes
+  useEffect(() => {
+    if (initialVideos?.length > 0 && videos.length === 0) {
+      const processedVideos = initialVideos.map(video => ({
+        ...video,
+        public_id: video.public_id || `existing_${Date.now()}_${video.id}`,
+        isNew: false
+      }));
+      setVideos(processedVideos);
+    }
+  }, [initialVideos]);
+
+  // Datos formateados para enviar al componente padre
+  const formattedVideos = useMemo(() =>
+    videos.map((video) => ({
+      public_id: video.public_id,
+      id: video.id,
+      url: video.url,
+      isNew: video.isNew
+    })),
+    [videos]
+  );
+
+  // Enviar actualizaciones al componente padre
+  useEffect(() => {
+    const shouldUpdate = 
+      videos.length > 0 || 
+      videosToDelete.length > 0;
+
+    if (typeof onVideoUpdate === "function" && shouldUpdate) {
+      const updateData = {
+        videos: formattedVideos,
+        videosToDelete
+      };
+      onVideoUpdate(updateData);
+    }
+  }, [formattedVideos, videosToDelete, onVideoUpdate]);
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-6 shadow-md rounded-md">
-      <h3 className="text-lg font-semibold mb-4">Gestión de Videos</h3>
+    <div>
+      {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
 
-      <div className="mb-4">
-        <input
-          type="text"
-          value={newVideo}
-          onChange={(e) => setNewVideo(e.target.value)}
-          placeholder="Añadir enlace de YouTube"
-          className="border w-full p-2 rounded-md"
-        />
-        <button
-          onClick={handleAddVideo}
-          className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600"
-        >
-          Agregar Video
-        </button>
-      </div>
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-900">Videos de YouTube</h3>
 
-      {videoUrls.length > 0 ? (
-        <ul className="space-y-4">
-          {videoUrls.map((url, index) => (
-            <li key={index} className="flex items-center justify-between">
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 underline"
-              >
-                {url}
-              </a>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {videos.map((video) => (
+            <div key={video.public_id} className="relative group">
+              <iframe
+                className="w-full h-48 rounded-lg"
+                src={`https://www.youtube.com/embed/${video.id}`}
+                title={`Video ${video.id}`}
+                frameBorder="0"
+                allowFullScreen
+              ></iframe>
               <button
-                onClick={() => handleRemoveVideo(index)}
-                className="bg-red-500 text-white px-2 py-1 rounded-md shadow hover:bg-red-600"
+                type="button"
+                onClick={() => handleDeleteVideo(video.public_id)}
+                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
               >
-                Eliminar
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
               </button>
-            </li>
+            </div>
           ))}
-        </ul>
-      ) : (
-        <p className="text-gray-500">No se han agregado videos.</p>
-      )}
+        </div>
+
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700">
+            Agregar URL de video de YouTube
+          </label>
+          <div className="flex items-center space-x-2 mt-1">
+            <input
+              type="text"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="https://www.youtube.com/watch?v=ID"
+              value={newVideoUrl}
+              onChange={(e) => setNewVideoUrl(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={handleAddVideo}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
+            >
+              Agregar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

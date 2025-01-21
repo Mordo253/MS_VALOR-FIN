@@ -84,7 +84,7 @@ export const PropertyProvider = ({ children }) => {
         piso: Number(propertyData.piso) || 0,
         valorAdministracion: Number(propertyData.valorAdministracion) || 0,
         anioConstruccion: Number(propertyData.anioConstruccion) || 0,
-        video: propertyData.video || '', // URL del video
+        videos: propertyData.videos || '', // URL del video
         creador: propertyData.creador || 'Administrador', // Valor por defecto
         propietario: propertyData.propietario || 'Desconocido' // Valor por defecto
       };
@@ -168,7 +168,7 @@ export const PropertyProvider = ({ children }) => {
         piso: Number(propertyData.piso) || 0,
         valorAdministracion: Number(propertyData.valorAdministracion) || 0,
         anioConstruccion: Number(propertyData.anioConstruccion) || 0,
-        video: propertyData.video || '', // URL del video
+        videos: propertyData.videos || '', // URL del video
         creador: propertyData.creador || 'Administrador', // Valor por defecto
         propietario: propertyData.propietario || 'Desconocido', // Valor por defecto
         updatedAt: new Date().toISOString(),
