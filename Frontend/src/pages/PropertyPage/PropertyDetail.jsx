@@ -33,32 +33,37 @@ import defaultImg from "../../assets/Default_avatar.jpeg";
 import angImg from "../../assets/Angela_Rua.jpg";
 import jfImg  from "../../assets/Juan_Fernando.png";
 
-const MetaTags = ({ title, description, imageUrl}) => {
-  const defaultTitle = "Vivienda MS DE VALOR"; // Cambia esto por el título por defecto
-  const defaultDescription = "Descripción por defecto"; // Cambia esto por la descripción por defecto
-  const defaultImageUrl = ""; // Cambia por una URL válida de imagen
-
+const MetaTags = ({ title, description, imageUrl }) => {
+  // Asumiendo que tienes estas props
+  const propertyUrl = typeof window !== 'undefined' ? window.location.href : '';
+  
   return (
     <Helmet>
-      {/* SEO básico */}
-      <title>{title || defaultTitle}</title>
-      <meta name="description" content={description || defaultDescription} />
-      <link rel="canonical" href={window.location.href} />
-
+      {/* Meta básicos */}
+      <meta name="description" content={description} />
+      <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
+      
       {/* Open Graph */}
-      <meta property="og:title" content={title || defaultTitle} />
-      <meta property="og:description" content={description || defaultDescription} />
-      <meta property="og:image" content={imageUrl || defaultImageUrl} />
+      <meta property="og:site_name" content="MS DE VALOR" />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content={propertyUrl} />
+      <meta property="og:image" content={imageUrl} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
-      <meta property="og:url" content={window.location.href} />
-      <meta property="og:type" content="website" />
-
+      <meta property="og:locale" content="es_ES" />
+      
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={title || defaultTitle} />
-      <meta name="twitter:description" content={description || defaultDescription} />
-      <meta name="twitter:image" content={imageUrl || defaultImageUrl} />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={imageUrl} />
+      
+      {/* Otros meta importantes */}
+      <meta name="robots" content="index, follow" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="format-detection" content="telephone=no" />
     </Helmet>
   );
 };
@@ -111,8 +116,8 @@ const formatLocation = (zona, ciudad, departamento) => {
 
 // Función optimizada para imágenes de Cloudinary
 const getOptimizedImageUrl = (imageUrl) => {
-  if (!imageUrl) return null;
-
+  if (!imageUrl) return '';
+  
   let fullUrl = imageUrl;
   if (!imageUrl.startsWith('http')) {
     fullUrl = imageUrl.startsWith('//') ? 
@@ -120,14 +125,15 @@ const getOptimizedImageUrl = (imageUrl) => {
       `https://${imageUrl}`;
   }
 
-  if (!fullUrl.includes('cloudinary')) return fullUrl;
+  if (fullUrl.includes('cloudinary')) {
+    return fullUrl.replace(
+      '/upload/',
+      '/upload/w_1200,h_630,c_fill/'
+    );
+  }
 
-  return fullUrl.replace(
-    '/upload/',
-    '/upload/w_1200,h_630,c_fill,g_auto,q_auto,f_auto/'
-  );
+  return fullUrl;
 };
-
 // Componentes auxiliares
 const PropertyDetail = ({ icon, label, value }) => {
   if (shouldHideValue(value)) return null;
@@ -230,11 +236,11 @@ export const PropertyDetails = () => {
   const [arrowTimeout, setArrowTimeout] = useState(null);
 
   // Preparar URL de imagen optimizada
-  const mainImageUrl2 = property?.images[0]?.secure_url;
+  const mainImageUrl2 = property?.images[0]?.secure_url || "";
   const mainImageUrl = property?.images[mainImageIndex]?.secure_url;
   const optimizedImageUrl = getOptimizedImageUrl(mainImageUrl2);
 
-  useEffect(() => {
+  useEffect(() => { 
     const fetchProperty = async () => {
       try {
         const propertyData = await getProperty(id);
@@ -265,6 +271,19 @@ export const PropertyDetails = () => {
       if (arrowTimeout) clearTimeout(arrowTimeout);
     };
   }, [arrowTimeout]);
+
+  useEffect(() => {
+    if (optimizedImageUrl) {
+      const img = new Image();
+      img.src = optimizedImageUrl;
+      img.onload = () => {
+        console.log('Imagen cargada correctamente:', optimizedImageUrl);
+      };
+      img.onerror = () => {
+        console.error('Error al cargar la imagen:', optimizedImageUrl);
+      };
+    }
+  }, [optimizedImageUrl]);
 
   const handleImageClick = (index) => {
     setMainImageIndex(index);
@@ -331,10 +350,12 @@ export const PropertyDetails = () => {
   return (
     <>
       <MetaTags
-      title={property.title}
-      description={property.description}
-      imageUrl={optimizedImageUrl}
-      />
+  title={`${property.title} - Sabaneta - La Doctora`}
+  description={property.description}
+  imageUrl={property.images[0]?.secure_url 
+    ? `https://res.cloudinary.com/dspspsz2y/image/upload/w_1200,h_630,c_fill/${property.images[0].secure_url}`
+    : ''}
+/>
 
       <div className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-16 lg:pt-12 xl:pt-16 2xl:pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
