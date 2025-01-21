@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProperties } from '../../context/PropertyContex';
 import { Button } from "@material-tailwind/react";
@@ -33,47 +33,36 @@ import defaultImg from "../../assets/Default_avatar.jpeg";
 import angImg from "../../assets/Angela_Rua.jpg";
 import jfImg  from "../../assets/Juan_Fernando.png";
 
-// Componente de Meta Tags
-const MetaTags = ({ property, optimizedImageUrl }) => (
-  <Helmet prioritizeSeoTags>
-    {/* Meta tags básicos */}
-    <title>{`${property.title} - ${property.codigo}`}</title>
-    <meta 
-      name="description" 
-      content={property.description || `${property.tipoInmueble} en ${property.ciudad}`} 
-    />
-    
-    {/* Open Graph / Facebook */}
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content={`${property.title} - ${property.codigo}`} />
-    <meta property="og:description" content={property.description || `${property.tipoInmueble} en ${property.ciudad}`} />
-    <meta property="og:url" content={window.location.href} />
-    <meta property="og:site_name" content="MS DE VALOR" />
-    
-    {/* Imagen Open Graph - Explícitamente definida */}
-    {optimizedImageUrl && (
-      <>
-        <meta property="og:image" content={optimizedImageUrl} />
-        <meta property="og:image:secure_url" content={optimizedImageUrl} />
-        <meta property="og:image:type" content="image/jpeg" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content={property.title} />
-      </>
-    )}
-    
-    {/* Twitter Card */}
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={`${property.title} - ${property.codigo}`} />
-    <meta name="twitter:description" content={property.description || `${property.tipoInmueble} en ${property.ciudad}`} />
-    {optimizedImageUrl && (
-      <>
-        <meta name="twitter:image" content={optimizedImageUrl} />
-        <meta name="twitter:image:alt" content={property.title} />
-      </>
-    )}
-  </Helmet>
-);
+const MetaTags = ({ title, description, imageUrl}) => {
+  const defaultTitle = "Vivienda MS DE VALOR"; // Cambia esto por el título por defecto
+  const defaultDescription = "Descripción por defecto"; // Cambia esto por la descripción por defecto
+  const defaultImageUrl = ""; // Cambia por una URL válida de imagen
+
+  return (
+    <Helmet>
+      {/* SEO básico */}
+      <title>{title || defaultTitle}</title>
+      <meta name="description" content={description || defaultDescription} />
+      <link rel="canonical" href={window.location.href} />
+
+      {/* Open Graph */}
+      <meta property="og:title" content={title || defaultTitle} />
+      <meta property="og:description" content={description || defaultDescription} />
+      <meta property="og:image" content={imageUrl || defaultImageUrl} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:url" content={window.location.href} />
+      <meta property="og:type" content="website" />
+
+      {/* Twitter Card */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title || defaultTitle} />
+      <meta name="twitter:description" content={description || defaultDescription} />
+      <meta name="twitter:image" content={imageUrl || defaultImageUrl} />
+    </Helmet>
+  );
+};
+
 
 //Miembros
 const teamMembers = [
@@ -123,18 +112,16 @@ const formatLocation = (zona, ciudad, departamento) => {
 // Función optimizada para imágenes de Cloudinary
 const getOptimizedImageUrl = (imageUrl) => {
   if (!imageUrl) return null;
-  
-  // Asegurarse de que la URL sea absoluta
+
   let fullUrl = imageUrl;
   if (!imageUrl.startsWith('http')) {
     fullUrl = imageUrl.startsWith('//') ? 
       `https:${imageUrl}` : 
       `https://${imageUrl}`;
   }
-  
+
   if (!fullUrl.includes('cloudinary')) return fullUrl;
-  
-  // Aplicar transformaciones de Cloudinary
+
   return fullUrl.replace(
     '/upload/',
     '/upload/w_1200,h_630,c_fill,g_auto,q_auto,f_auto/'
@@ -243,8 +230,9 @@ export const PropertyDetails = () => {
   const [arrowTimeout, setArrowTimeout] = useState(null);
 
   // Preparar URL de imagen optimizada
+  const mainImageUrl2 = property?.images[0]?.secure_url;
   const mainImageUrl = property?.images[mainImageIndex]?.secure_url;
-  const optimizedImageUrl = getOptimizedImageUrl(mainImageUrl);
+  const optimizedImageUrl = getOptimizedImageUrl(mainImageUrl2);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -342,7 +330,11 @@ export const PropertyDetails = () => {
 
   return (
     <>
-      {/* <MetaTags property={property} optimizedImageUrl={optimizedImageUrl} /> */}
+      <MetaTags
+      title={property.title}
+      description={property.description}
+      imageUrl={optimizedImageUrl}
+      />
 
       <div className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-16 lg:pt-12 xl:pt-16 2xl:pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
