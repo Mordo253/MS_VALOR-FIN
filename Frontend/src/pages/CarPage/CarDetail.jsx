@@ -31,6 +31,42 @@ import {
   WhatsappIcon,
   EmailIcon
 } from 'react-share';
+import AdvancedTooltip from '../../components/ui/Tooltips/AdvancedTooltip';
+import defaultImg from "../../assets/Default_avatar.jpeg";
+import angImg from "../../assets/Angela_Rua.jpg";
+import jfImg  from "../../assets/Juan_Fernando.png";
+
+//Miembros
+const teamMembers = [
+  {
+    name: 'Juan Fernando González',
+    role: 'Director',
+    image: `../${jfImg}`,
+    bio: 'Lorem ipsum, dolor sit amet consect',
+    WhatsApp: 'https://wa.me/573122259584?text=Hola Juan Fernando, estoy interesad@ en lo que ofrece MS De Valor',
+  },
+  {
+    name: 'Claudia González',
+    role: 'Asesora financiera',
+    image: `../${defaultImg}`,
+    bio: 'Lorem ipsum, dolor sit amet consect',
+    WhatsApp: 'https://wa.me/573160420188?text=Hola Claudia, estoy interesad@ en lo que ofrece MS De Valor',
+  },
+  {
+    name: 'Carolina Montoya',
+    role: 'Asesora financiera',
+    image: `../${defaultImg}`,
+    bio: 'Lorem ipsum, dolor sit amet consect',
+    WhatsApp: 'https://wa.me/573160420188?text=Hola Claudia, estoy interesad@ en lo que ofrece MS De Valor',
+  },
+  {
+    name: 'Angela Rua',
+    role: 'Asesora financiera',
+    image: `../${angImg}`,
+    bio: 'Lorem ipsum, dolor sit amet consect',
+    WhatsApp: 'https://wa.me/573160420188?text=Hola Claudia, estoy interesad@ en lo que ofrece MS De Valor',
+  },
+];
 
 const shouldHideValue = (value) => {
   if (value === null || value === undefined) return true;
@@ -272,8 +308,30 @@ export const CarDetails = () => {
                   <span className="font-medium">Volver</span>
                 </button>
               </div>
+              {/* Título y código */}
               <h1 className="text-2xl font-bold mb-2">{car.title}</h1>
-              <p className="text-lg font-semibold text-gray-600 mb-4">{car.codigo}</p>
+                  {(() => {
+                    const member = teamMembers.find(m => m.name === car.creador);
+                    
+                    if (member) {
+                      return (
+                        <AdvancedTooltip
+                          title={member.name}
+                          content={member.bio}
+                          image={member.image}
+                          link={member.WhatsApp}
+                          theme="dark"
+                          position="bottom"
+                          width="250px"
+                          trigger="click"
+                        >
+                          <p className="text-lg font-semibold text-gray-600 mb-4">{car.codigo}</p>
+                        </AdvancedTooltip>
+                      );
+                    }
+                    return null;
+                  })()}
+
 
               {/* Availability Status */}
               <div className="mb-4">
@@ -356,6 +414,28 @@ export const CarDetails = () => {
           <h2 className="text-xl font-bold mb-4">Descripción</h2>
           <p className="text-gray-700 leading-relaxed">{car.description}</p>
         </div>
+
+        {/* Videos */}
+        <div className="bg-white rounded-xl p-6 shadow-sm mt-6">
+              <h2 className="text-xl font-semibold mb-6">Videos del vehículo</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {car.videos && car.videos.length > 0 ? (
+                  car.videos.map((video) => (
+                    <div key={video.public_id} className="relative group">
+                      <iframe
+                        className="w-full h-48 rounded-lg"
+                        src={`https://www.youtube.com/embed/${video.id}`}
+                        title={`Video ${video.id}`}
+                        frameBorder="0"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  ))
+                ) : (
+                  <p>No hay videos disponibles para este vehículo.</p>
+                )}
+              </div>
+            </div>
       </div>
     </div>
   );

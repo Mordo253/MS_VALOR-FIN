@@ -68,7 +68,6 @@ const MetaTags = ({ title, description, imageUrl }) => {
   );
 };
 
-
 //Miembros
 const teamMembers = [
   {

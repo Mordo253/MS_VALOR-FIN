@@ -39,52 +39,7 @@ export const VehicleProvider = ({ children }) => {
     }
   }, []);
 
-  const createVehicle = async (vehicleData) => {
-    try {
-      // Procesar datos numéricos y booleanos
-      const processedData = {
-        ...vehicleData,
-        price: Number(vehicleData.price) || 0,
-        kilometer: Number(vehicleData.kilometer) || 0,
-        registrationYear: Number(vehicleData.registrationYear) || 0,
-        door: Number(vehicleData.door) || 0,
-        model: vehicleData.model || "", // Asegurar compatibilidad con strings
-        disponible: Boolean(vehicleData.disponible),
-        images: vehicleData.images.map((img) => ({
-          public_id: img.public_id || null,
-          secure_url: img.secure_url || null,
-          file: img.file || null, // Solo se envía si es nueva
-          resource_type: img.resource_type || "image",
-        })),
-      };
   
-      // Enviar los datos al backend
-      const response = await axios.post(`${API_URL}/car/cars`, processedData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-  
-      if (!response.data || !response.data.data) {
-        throw new Error("La respuesta del servidor no contiene los datos esperados");
-      }
-  
-      // Actualizar el estado global
-      const newCar = response.data.data;
-      setVehicles((prev) => [...prev, newCar]);
-  
-      console.log("Vehículo creado con éxito:", newCar);
-      return { success: true, data: newCar };
-    } catch (err) {
-      console.error("Error al crear vehículo:", err.response || err.message);
-      return {
-        success: false,
-        error: err.response?.data?.message || "Error al comunicarse con el servidor",
-      };
-    }
-  };
-  
-
   // Obtener un vehículo por ID
   const getVehicle = async (id) => {
     try {
@@ -99,21 +54,64 @@ export const VehicleProvider = ({ children }) => {
     }
   };
 
-  const updateVehicle = async (id, vehicleData) => {
+  // Crear un nuevo vehículo
+  const createVehicle = async (vehicleData) => {
     try {
-      // Procesar datos numéricos, booleanos y de imágenes
+      // Validar y procesar los datos antes de enviarlos
       const processedData = {
         ...vehicleData,
         price: Number(vehicleData.price) || 0,
         kilometer: Number(vehicleData.kilometer) || 0,
         registrationYear: Number(vehicleData.registrationYear) || 0,
         door: Number(vehicleData.door) || 0,
-        model: vehicleData.model || "",
         disponible: Boolean(vehicleData.disponible),
         images: vehicleData.images.map((img) => ({
           public_id: img.public_id || null,
           secure_url: img.secure_url || null,
-          file: img.file || null, // Incluir solo si es nueva
+          file: img.file || null,
+          resource_type: img.resource_type || "image",
+        })),
+      };
+
+      // Enviar los datos al backend
+      const response = await axios.post(`${API_URL}/car/cars`, processedData, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.data || !response.data.data) {
+        throw new Error('La respuesta del servidor no contiene los datos esperados.');
+      }
+
+      // Actualizar el estado global
+      const newVehicle = response.data.data;
+      setVehicles((prev) => [...prev, newVehicle]);
+
+      console.log('Vehículo creado con éxito:', newVehicle);
+      return { success: true, data: newVehicle };
+    } catch (err) {
+      console.error('Error al crear vehículo:', err.response || err.message);
+      return {
+        success: false,
+        error: err.response?.data?.message || 'Error al comunicarse con el servidor.',
+      };
+    }
+  };
+
+  // Actualizar un vehículo existente
+  const updateVehicle = async (id, vehicleData) => {
+    try {
+      // Validar y procesar los datos antes de enviarlos
+      const processedData = {
+        ...vehicleData,
+        price: Number(vehicleData.price) || 0,
+        kilometer: Number(vehicleData.kilometer) || 0,
+        registrationYear: Number(vehicleData.registrationYear) || 0,
+        door: Number(vehicleData.door) || 0,
+        disponible: Boolean(vehicleData.disponible),
+        images: vehicleData.images.map((img) => ({
+          public_id: img.public_id || null,
+          secure_url: img.secure_url || null,
+          file: img.file || null,
           resource_type: img.resource_type || "image",
           width: img.width || 0,
           height: img.height || 0,
@@ -121,39 +119,28 @@ export const VehicleProvider = ({ children }) => {
         })),
         imagesToDelete: vehicleData.imagesToDelete || [],
       };
-  
-      console.log("Datos procesados antes de enviar:", processedData);
-  
+
       // Enviar datos al backend
-      const response = await axios.put(
-        `${API_URL}/car/cars/${id}`,
-        processedData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          timeout: 30000,
-        }
-      );
-  
+      const response = await axios.put(`${API_URL}/car/cars/${id}`, processedData, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 30000,
+      });
+
       if (!response.data || !response.data.success) {
-        throw new Error(response.data?.message || "Error al actualizar el vehículo");
+        throw new Error(response.data?.message || 'Error al actualizar el vehículo.');
       }
-  
+
       // Actualizar el vehículo en el estado global
       const updatedVehicle = response.data.data;
-      console.log("Vehículo actualizado exitosamente:", updatedVehicle);
-  
-      setVehicles((prevVehicles) =>
-        prevVehicles.map((v) => (v._id === updatedVehicle._id ? updatedVehicle : v))
-      );
-  
+      setVehicles((prev) => prev.map((v) => (v._id === updatedVehicle._id ? updatedVehicle : v)));
+
+      console.log('Vehículo actualizado con éxito:', updatedVehicle);
       return { success: true, data: updatedVehicle };
-    } catch (error) {
-      console.error("Error al actualizar vehículo:", error.message);
+    } catch (err) {
+      console.error('Error al actualizar vehículo:', err.message);
       return {
         success: false,
-        error: error.response?.data?.message || "Error al actualizar el vehículo",
+        error: err.response?.data?.message || 'Error al actualizar el vehículo.',
       };
     }
   };

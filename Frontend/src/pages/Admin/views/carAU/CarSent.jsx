@@ -4,6 +4,7 @@ import { useVehicles } from "../../../../context/CarContext";
 import { useAuth } from "../../../../context/AuthContext";
 import PropertyImg from "../propertyAU/Property/PropertyImg";
 import CarForm from "./CarFom";
+import PropertyVideo from "../propertyAU/Property/PropertyVideo";
 
 const CarSent = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const CarSent = () => {
 
   const [formData, setFormData] = useState({
     title: "",
+    codigo: "",
     car: "",
     price: 0, // Agregado
     kilometer: "",
@@ -25,10 +27,15 @@ const CarSent = () => {
     door: "",
     fuel: "",
     disponible: true,
+    videos: "",
+    creador: "",
+    propietario: "",
     description: "",
   });
 
   const [images, setImages] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [videosToDelete, setVideosToDelete] = useState([]);
   const [error, setError] = useState(null);
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [success, setSuccess] = useState(false);
@@ -45,6 +52,11 @@ const CarSent = () => {
     setImages(updatedImages);
     setImagesToDelete(toDelete);
   }, []);
+
+  const handleVideoUpdate = useCallback(({ videos: updatedVideos, videosToDelete: toDelete }) => {
+      setVideos(updatedVideos);
+      setVideosToDelete(toDelete);
+    }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,6 +84,14 @@ const CarSent = () => {
         place: Number(formData.place) || 0,
         tractionType: formData.tractionType,
         disponible: Boolean(formData.disponible),
+        // Actualización del manejo de videos
+        videos: videos.map(video => ({
+          id: video.id,
+          url: video.url,
+          public_id: video.public_id,
+          isNew: video.isNew
+        })),
+        videosToDelete: videosToDelete.filter(id => !id.startsWith('temp_')),
         images: images.map((img) => ({
           public_id: img.public_id || null,
           secure_url: img.secure_url || null,
@@ -102,6 +122,8 @@ const CarSent = () => {
         setSuccess(true);
         setImages([]);
         setImagesToDelete([]);
+        setVideos([]);
+        setVideosToDelete([]);
         setTimeout(() => navigate("/cars"), 1500);
       } else {
         throw new Error(response?.error || "No se pudo registrar el vehículo.");
@@ -147,6 +169,11 @@ const CarSent = () => {
             initialImages={images} 
             onImageUpdate={handleImageUpdate} 
           />
+        </div>
+
+        <div className="bg-white shadow-sm rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-6">Videos de la Propiedad</h2>
+          <PropertyVideo initialVideos={videos} onVideoUpdate={handleVideoUpdate} />
         </div>
 
         <div className="flex justify-end">

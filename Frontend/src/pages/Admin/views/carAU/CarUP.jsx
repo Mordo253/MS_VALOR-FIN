@@ -4,6 +4,7 @@ import { useAuth } from "../../../../context/AuthContext";
 import { useVehicles } from "../../../../context/CarContext";
 import PropertyImg from "../propertyAU/Property/PropertyImg";
 import CarForm from "./CarFom";
+import PropertyVideo from "../propertyAU/Property/PropertyVideo";
 
 const CarUp = () => {
   const { id } = useParams();
@@ -28,10 +29,13 @@ const CarUp = () => {
     disponible: true,
     description: "",
     codigo: "",
+    propietario: "",
   });
 
   const [images, setImages] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [videosToDelete, setVideosToDelete] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -73,6 +77,13 @@ const CarUp = () => {
         codigo: carData.codigo || "",
       });
       setImages(carData.images || []);
+      // Procesar videos iniciales
+      const processedVideos = carData.videos?.map(video => ({
+        ...video,
+        public_id: video.public_id || `existing_${Date.now()}_${video.id}`,
+        isNew: false
+      })) || [];
+      setVideos(processedVideos);
     } catch (err) {
       setError(err.message || "Error al cargar los datos del vehículo");
     } finally {
@@ -98,6 +109,11 @@ const CarUp = () => {
     setImagesToDelete(toDelete);
   };
 
+  const handleVideoUpdate = useCallback(({ videos: updatedVideos, videosToDelete: toDelete }) => {
+      setVideos(updatedVideos);
+      setVideosToDelete(toDelete);
+    }, []);
+
   // Manejar envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -117,6 +133,14 @@ const CarUp = () => {
         place: Number(formData.place),
         door: Number(formData.door),
         disponible: Boolean(formData.disponible),
+        // Videos actualizados
+        videos: videos.map(video => ({
+          id: video.id,
+          url: video.url,
+          public_id: video.public_id,
+          isNew: video.isNew
+        })),
+        videosToDelete: videosToDelete.filter(id => !id.startsWith('temp_')),
         images: images
           .map((img) => ({
             public_id: img.public_id || null,
@@ -127,16 +151,35 @@ const CarUp = () => {
         imagesToDelete,
       };
 
-      const response = await updateVehicle(id, dataToSend);
+      const timeoutDuration = 30000;
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Tiempo de espera agotado")), timeoutDuration)
+      );
+  
+      const responsePromise = updateVehicle(id, dataToSend);
+      const response = await Promise.race([responsePromise, timeoutPromise]);
 
-      if (response?.success) {
+      if (response && response.data) {
         setSuccess(true);
+        setImages([]);
+        setImagesToDelete([]);
+        setVideos([]);
+        setVideosToDelete([]);
+        setError(null);
         setTimeout(() => navigate("/cars"), 2000);
       } else {
         throw new Error("Error al actualizar el vehículo");
       }
     } catch (err) {
+      console.error("Error detallado:", err);
       setError(err.message || "Error al actualizar el vehículo");
+      setSuccess(false);
+      
+      if (err.response?.data?.message) {
+        setError(`Error del servidor: ${err.response.data.message}`);
+      } else {
+        setError(err.message || "Error al actualizar el vehículo");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -174,6 +217,14 @@ const CarUp = () => {
         <div className="bg-white shadow-sm rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-6">Imágenes del Vehículo</h2>
           <PropertyImg initialImages={images} onImageUpdate={handleImageUpdate} />
+        </div>
+        
+        <div className="bg-white shadow-sm rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-6">Videos de la Propiedad</h2>
+          <PropertyVideo
+            initialVideos={videos}
+            onVideoUpdate={handleVideoUpdate}
+          />
         </div>
 
         <div className="flex justify-end">

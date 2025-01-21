@@ -20,6 +20,8 @@ const carSchema = new mongoose.Schema({
   car:{type: String, require:true},
   price: { type: Number, required: true },
   codigo: { type: String, required: true, unique: true },
+  creador: { type: String, required: true, unique: true },
+  propietario: { type: String, required: true, unique: true },
   kilometer: { type: Number, required: true },
   color: { type: String, required: true },
   registrationYear: { type: String, required: true },
@@ -32,20 +34,18 @@ const carSchema = new mongoose.Schema({
   fuel: { type: String, required: true },
   disponible: { type: Boolean, default: true }, // Nuevo campo para estado de disponibilidad
   description:{ type: String, required: true},
+  videos: {
+    type: [{
+      id: String,
+      url: String
+    }],
+    default: []
+  },
   images: { type: [cloudinaryImageSchema], default: [] },
   imageLimit: { type: Number, default: 15 }
 }, {
   timestamps: true, 
 });
-async function generateCodigo() {
-  const lastCar = await Car.findOne().sort({ createdAt: -1 }).select('codigo');
-  if (!lastCar) return 'MSV-001'; // Si no hay propiedades, empezar en 0001
-
-  const lastCodigo = lastCar.codigo;
-  const numericPart = parseInt(lastCodigo.split('-')[1]) + 1; // Incrementar la parte numérica
-  return `MSV-${String(numericPart).padStart(3, '0')}`; // Formato MSV-0000
-}
-
 // Hook para establecer el código antes de guardar
 carSchema.pre('save', async function(next) {
   if (!this.codigo) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const CarForm = ({ initialData, onChange, isSubmitting }) => {
+const CarForm = ({ initialData, onChange, isSubmitting, isUpdate = false }) => {
   const [carData, setCarData] = useState({
     title: "",
     car: "",
@@ -17,6 +17,8 @@ const CarForm = ({ initialData, onChange, isSubmitting }) => {
     fuel: "",
     description: "",
     disponible: true,
+    creador: "",
+    propietario: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -410,6 +412,48 @@ const CarForm = ({ initialData, onChange, isSubmitting }) => {
           {touched.price && errors.price && (
             <p className="mt-1 text-sm text-red-600">{errors.price}</p>
           )}
+        </div>
+        {/* Campo de Creador (solo en creación) */}
+        {!isUpdate && (
+          <div className="mb-4">
+            <label htmlFor="creador" className="block text-sm font-medium text-gray-700">
+              Creador
+            </label>
+            <select
+              type="text"
+              id="creador"
+              name="creador"
+              value={carData.creador}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Seleccione una opción</option>
+            {["Carolina Montoya", "Claudia González", "Angela Rua", "Juan Fernando González"].map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+            </select>
+
+          </div>
+        )}
+
+        {/* Campo de Propietario */}
+        <div className="mb-4">
+          <label htmlFor="propietario" className="block text-sm font-medium text-gray-700">
+            Propietario
+          </label>
+          <input
+            type="text"
+            id="propietario"
+            name="propietario"
+            value={carData.propietario}
+            onChange={handleChange}
+            required
+            placeholder="Ingrese el nombre del propietario"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
         </div>
 
         {/* Descripción */}
