@@ -1,5 +1,4 @@
 import React, { useEffect, useLayoutEffect } from 'react';
-import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { PropertyProvider } from "./context/PropertyContex";
 import { PropertyPage } from "./pages/PropertyPage/PropertyPage";
@@ -103,7 +102,6 @@ function App() {
 
   return (
     <BrowserRouter>
-    <HelmetProvider>
       <AuthProvider>
         <PropertyProvider>
           <VehicleProvider>
@@ -115,7 +113,6 @@ function App() {
           </VehicleProvider>
         </PropertyProvider>
       </AuthProvider>
-    </HelmetProvider>
     </BrowserRouter>
   );
 }

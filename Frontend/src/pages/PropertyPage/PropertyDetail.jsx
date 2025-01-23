@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProperties } from '../../context/PropertyContex';
 import { Button } from "@material-tailwind/react";
@@ -32,41 +31,7 @@ import AdvancedTooltip from '../../components/ui/Tooltips/AdvancedTooltip';
 import defaultImg from "../../assets/Default_avatar.jpeg";
 import angImg from "../../assets/Angela_Rua.jpg";
 import jfImg  from "../../assets/Juan_Fernando.png";
-
-const MetaTags = ({ title, description, imageUrl }) => {
-  // Asumiendo que tienes estas props
-  const propertyUrl = typeof window !== 'undefined' ? window.location.href : '';
-  
-  return (
-    <Helmet>
-      {/* Meta básicos */}
-      <meta name="description" content={description} />
-      <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
-      
-      {/* Open Graph */}
-      <meta property="og:site_name" content="MS DE VALOR" />
-      <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
-      <meta property="og:type" content="website" />
-      <meta property="og:url" content={propertyUrl} />
-      <meta property="og:image" content={imageUrl} />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
-      <meta property="og:locale" content="es_ES" />
-      
-      {/* Twitter Card */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={title} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={imageUrl} />
-      
-      {/* Otros meta importantes */}
-      <meta name="robots" content="index, follow" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta name="format-detection" content="telephone=no" />
-    </Helmet>
-  );
-};
+import MetaTags from '../../components/ui/Otter/MetaTags';
 
 //Miembros
 const teamMembers = [
@@ -204,7 +169,7 @@ const CustomShareButton = ({ property, mainImageUrl }) => {
       ) : (
         <>
           <Share2 className="w-5 h-5" />
-          <span>Compartir enlace.</span>
+          <span>Compartir enlace</span>
         </>
       )}
     </button>
@@ -346,15 +311,20 @@ export const PropertyDetails = () => {
     property.departamento
   );
 
+  const title = `${property.title} - ${property.codigo}`;
+  const description = property.description || `${property.tipoInmueble} en ${property.ciudad}`;
+  const imageUrl = property?.images[0]?.secure_url || 'https://via.placeholder.com/1200x630.png';
+  const url = window.location.href;
+
   return (
     <>
       <MetaTags
-  title={`${property.title} - Sabaneta - La Doctora`}
-  description={property.description}
-  imageUrl={property.images[0]?.secure_url 
-    ? `https://res.cloudinary.com/dspspsz2y/image/upload/w_1200,h_630,c_fill/${property.images[0].secure_url}`
-    : ''}
-/>
+        title={title}
+        description={description}
+        imageUrl={imageUrl}
+        url={url}
+      />
+
 
       <div className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-16 lg:pt-12 xl:pt-16 2xl:pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
