@@ -6,7 +6,7 @@ import footerF from '../../assets/footerF.jpg';
 import footerC from '../../assets/footerC.jpg';
 import footerH from '../../assets/footerH.jpg';
 import imglog from "../../assets/MS5.png";
-import './Footer.css';
+import './FooterG.css';
 
 // Componente para imágenes circulares
 const CircleImage = ({ src, alt }) => (
