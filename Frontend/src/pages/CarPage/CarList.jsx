@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useVehicles } from '../../context/CarContext';  // Asumimos que tienes un contexto similar al de Properties
-import { SearchbarC } from '../../components/car/Searchbar/Searchbar'; // Asumimos que tienes un componente SearchbarC similar
+import { SearchbarC } from '../../components/car/Searchbar/Searchbar.jsx'; // Asumimos que tienes un componente SearchbarC similar
 import { Item } from '../../components/car/Item/ItemC'; // Asumimos que tienes un componente Item similar para mostrar los detalles del vehículo
 
 export const CarList = () => {
