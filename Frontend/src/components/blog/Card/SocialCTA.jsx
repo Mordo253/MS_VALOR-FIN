@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
+import imagen2 from '../../../assets/imagen1.jpeg';
+import imagen1 from '../../../assets/imagen2.jpeg';
 
 const SocialCTA = () => {
   const socialLinks = [
@@ -57,12 +59,12 @@ const SocialCTA = () => {
           >
             <div className="relative w-64 h-64">
               <img
-                src="https://via.placeholder.com/200"
+                src={imagen1}
                 alt="Imagen 1"
                 className="absolute top-0 left-0 w-48 h-48 object-cover rounded-lg shadow-lg transform rotate-6"
               />
               <img
-                src="https://via.placeholder.com/200"
+                src={imagen2}
                 alt="Imagen 2"
                 className="absolute bottom-0 right-0 w-48 h-48 object-cover rounded-lg shadow-lg transform -rotate-6"
               />

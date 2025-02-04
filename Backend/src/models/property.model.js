@@ -66,6 +66,7 @@ const propertySchema = new mongoose.Schema({
   disponible: { type: Boolean, default: true }, // Nuevo campo para estado de disponibilidad
   valorAdministracion: { type: Number, required: true },
   anioConstruccion: { type: Number, required: true },
+  useful_room: { type: Number, required: true },
   caracteristicas: {
     type: [caracteristicaSchema],
     validate: {

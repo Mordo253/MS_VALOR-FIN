@@ -34,6 +34,7 @@ const PropertyUP = () => {
     disponible: true,
     valorAdministracion: "",
     anioConstruccion: "",
+    useful_room: "",
     description: "",
     propietario: "",
   });
@@ -85,6 +86,7 @@ const PropertyUP = () => {
         piso: Number(propertyData.piso) || "",
         valorAdministracion: Number(propertyData.valorAdministracion) || "",
         anioConstruccion: Number(propertyData.anioConstruccion) || "",
+        useful_room: Number(propertyData.useful_room) || "",
         disponible: Boolean(propertyData.disponible),
       }));
 
@@ -164,6 +166,7 @@ const PropertyUP = () => {
         piso: Number(formData.piso) || 0,
         valorAdministracion: Number(formData.valorAdministracion) || 0,
         anioConstruccion: Number(formData.anioConstruccion) || 0,
+        useful_room: Number(formData.useful_room) || 0,
         
         caracteristicas: [
           ...selectedCaracteristicas.internas.map((name) => ({

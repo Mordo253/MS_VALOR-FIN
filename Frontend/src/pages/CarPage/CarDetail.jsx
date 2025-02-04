@@ -19,7 +19,8 @@ import {
   Fuel,
   DoorOpen,
   Users,
-  X
+  X,
+  Maximize2
 } from 'lucide-react';
 import {
   FacebookShareButton,
@@ -34,7 +35,10 @@ import {
 import AdvancedTooltip from '../../components/ui/Tooltips/AdvancedTooltip';
 import defaultImg from "../../assets/Default_avatar.jpeg";
 import angImg from "../../assets/Angela_Rua.jpg";
-import jfImg  from "../../assets/Juan_Fernando.png";
+import jfImg  from "../../assets/WebJFG.png";
+import AgentProfile from '../../components/Team/AgentProfile';
+import ElegantImageViewer from '../../components/ui/Otter/Imagezoom';
+import MetaTags from '../../components/ui/Otter/MetaTags';
 
 //Miembros
 const teamMembers = [
@@ -42,28 +46,28 @@ const teamMembers = [
     name: 'Juan Fernando González',
     role: 'Director',
     image: `../${jfImg}`,
-    bio: 'Lorem ipsum, dolor sit amet consect',
+    phone: '3160420188',
     WhatsApp: 'https://wa.me/573122259584?text=Hola Juan Fernando, estoy interesad@ en lo que ofrece MS De Valor',
   },
   {
     name: 'Claudia González',
-    role: 'Asesora financiera',
+    role: 'Agente Inmobiliaria',
     image: `../${defaultImg}`,
-    bio: 'Lorem ipsum, dolor sit amet consect',
+    phone: '3160420188',
     WhatsApp: 'https://wa.me/573160420188?text=Hola Claudia, estoy interesad@ en lo que ofrece MS De Valor',
   },
   {
     name: 'Carolina Montoya',
-    role: 'Asesora financiera',
+    role: 'Agente Inmobiliaria',
     image: `../${defaultImg}`,
-    bio: 'Lorem ipsum, dolor sit amet consect',
+    phone: '3160420188',
     WhatsApp: 'https://wa.me/573160420188?text=Hola Claudia, estoy interesad@ en lo que ofrece MS De Valor',
   },
   {
     name: 'Angela Rua',
-    role: 'Asesora financiera',
+    role: 'Agente Inmobiliaria',
     image: `../${angImg}`,
-    bio: 'Lorem ipsum, dolor sit amet consect',
+    phone: '3160420188',
     WhatsApp: 'https://wa.me/573160420188?text=Hola Claudia, estoy interesad@ en lo que ofrece MS De Valor',
   },
 ];
@@ -158,7 +162,8 @@ export const CarDetails = () => {
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [userSelected, setUserSelected] = useState(false);
   const [showArrows, setShowArrows] = useState(false);
-  const [arrowTimeout, setArrowTimeout] = useState(null);
+   const [arrowTimeout, setArrowTimeout] = useState(null);
+   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchCar = async () => {
@@ -225,24 +230,62 @@ export const CarDetails = () => {
   if (!car) return <div className="min-h-screen flex items-center justify-center">No se encontró el automóvil.</div>;
 
   const location = formatLocation(car.city, car.state);
-
+  const mainImageUrl = car?.images[mainImageIndex]?.secure_url;
+  const title = `${car.title} - ${car.codigo}`;
+  const description = car.description || `${car.tipoInmueble} en ${car.ciudad}`;
+  const imageUrl = car?.images[0]?.secure_url;
+  const url = window.location.href;
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-16 lg:pt-12 xl:pt-16 2xl:pt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Image Gallery Section */}
-          <div className="lg:col-span-8 space-y-4">
+    <>
+
+      <MetaTags
+        title={title}
+        description={description}
+        imageUrl={imageUrl}
+        url={url}
+      />
+      
+      <div className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-16 lg:pt-12 xl:pt-16 2xl:pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Grid de tres columnas en pantallas grandes */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Columna izquierda: Perfil del agente */}
+            <div className="lg:col-span-3">
+              {(() => {
+                const agent = teamMembers.find(m => m.name === car.creador);
+                return agent ? (
+                  <div className="bg-white rounded-xl shadow-sm sticky top-24">
+                    <AgentProfile agent={agent} />
+                  </div>
+                ) : null;
+              })()}
+            </div>
+
+            {/* Columna central: Galería */}
+            <div className="lg:col-span-6 space-y-4">
             <div
-              className="relative h-[600px] bg-gray-200 rounded-xl overflow-hidden"
+              className="relative h-[600px] bg-gray-200 rounded-xl overflow-hidden group"
               onTouchStart={handleTouchStart}
               onMouseEnter={() => setShowArrows(true)}
               onMouseLeave={() => setShowArrows(false)}
             >
               <img
-                src={car.images[mainImageIndex]?.secure_url}
+                src={mainImageUrl}
                 alt={car.title}
                 className="w-full h-full object-cover"
               />
+              
+              {/* Botón de zoom */}
+              <button
+                onClick={() => setIsZoomModalOpen(true)}
+                className="absolute top-4 right-4 p-2 bg-white/90 rounded-full shadow-lg 
+                          hover:bg-white transition-all duration-300
+                          opacity-0 group-hover:opacity-100"
+              >
+                <Maximize2 size={24} />
+              </button>
+
+              {/* Botones de navegación existentes */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -274,6 +317,13 @@ export const CarDetails = () => {
                 <ChevronRight size={24} />
               </button>
             </div>
+            <ElegantImageViewer
+              isOpen={isZoomModalOpen}
+              onClose={() => setIsZoomModalOpen(false)}
+              images={car.images}
+              currentImageIndex={mainImageIndex}
+              onImageChange={setMainImageIndex}
+            />
 
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {car.images.map((image, index) => (
@@ -297,8 +347,8 @@ export const CarDetails = () => {
           </div>
 
           {/* Car Info Section */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-xl p-6 shadow-sm sticky top-24">
               <div className="flex items-center gap-2 mb-4">
                 <button
                   onClick={() => navigate(-1)}
@@ -317,7 +367,7 @@ export const CarDetails = () => {
                       return (
                         <AdvancedTooltip
                           title={member.name}
-                          content={member.bio}
+                          content={member.phone}
                           image={member.image}
                           link={member.WhatsApp}
                           theme="dark"
@@ -372,11 +422,11 @@ export const CarDetails = () => {
                 <CarDetail icon={<Gauge />} label="Kilometraje" value={car.kilometer} />
                 <CarDetail icon={<Palette />} label="Color" value={car.color} />
                 <CarDetail icon={<Calendar />} label="Año de registro" value={car.registrationYear} />
-                <CarDetail icon={<Cog />} label="Transmisión" value={car.change} />
+                {/* <CarDetail icon={<Cog />} label="Transmisión" value={car.change} />
                 <CarDetail icon={<Car />} label="Tracción" value={car.tractionType} />
                 <CarDetail icon={<Fuel />} label="Combustible" value={car.fuel} />
                 <CarDetail icon={<DoorOpen />} label="Puertas" value={car.door} />
-                <CarDetail icon={<Users />} label="Capacidad" value={`${car.place} personas`} />
+                <CarDetail icon={<Users />} label="Capacidad" value={`${car.place} personas`} /> */}
               </div>
 
               {/* Contact and Share Buttons */}
@@ -410,10 +460,26 @@ export const CarDetails = () => {
         </div>
 
         {/* Description Section */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mt-6">
-          <h2 className="text-xl font-bold mb-4">Descripción</h2>
-          <p className="text-gray-700 leading-relaxed">{car.description}</p>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                {/* Descripción */}
+                {car.description && (
+                  <div className="bg-white rounded-xl p-6 shadow-sm">
+                    <h2 className="text-xl font-bold mb-4">Descripción</h2>
+                    <p className="text-gray-700 leading-relaxed">{car.description}</p>
+                  </div>
+                )}
+    
+                {/* Detalles adicionales */}
+                <div className="bg-white rounded-xl p-6 shadow-sm">
+                  <h2 className="text-xl font-bold mb-4">Detalles adicionales</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <CarDetail icon={<Cog />} label="Transmisión" value={car.change} />
+                <CarDetail icon={<Car />} label="Tracción" value={car.tractionType} />
+                <CarDetail icon={<Fuel />} label="Combustible" value={car.fuel} />
+                <CarDetail icon={<DoorOpen />} label="Puertas" value={car.door} />
+                  </div>
+                </div>
+              </div>
 
         {/* Videos */}
         <div className="bg-white rounded-xl p-6 shadow-sm mt-6">
@@ -438,6 +504,7 @@ export const CarDetails = () => {
             </div>
       </div>
     </div>
+    </>
   );
 };
 

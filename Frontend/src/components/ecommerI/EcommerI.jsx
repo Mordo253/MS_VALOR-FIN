@@ -181,7 +181,7 @@ export const Indicador = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .ticker-track {
           animation: ticker 30s linear infinite;
           will-change: transform;

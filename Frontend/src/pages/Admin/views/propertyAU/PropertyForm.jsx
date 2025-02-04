@@ -35,6 +35,7 @@ const PropertyForm = () => {
     disponible: true,
     valorAdministracion: "",
     anioConstruccion: "",
+    useful_room: "",
     description: "",
     videos: "",
     creador: "",
@@ -100,6 +101,7 @@ const PropertyForm = () => {
         "estado",
         "valorAdministracion",
         "anioConstruccion",
+        "useful_room",
         "description",
         "propietario",
       ];
@@ -129,6 +131,7 @@ const PropertyForm = () => {
         piso: Number(formData.piso),
         valorAdministracion: Number(formData.valorAdministracion),
         anioConstruccion: Number(formData.anioConstruccion),
+        useful_room: Number(formData.useful_room),
         disponible: Boolean(formData.disponible),
         caracteristicas: [
           ...selectedCaracteristicas.internas.map((name) => ({

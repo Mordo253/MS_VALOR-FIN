@@ -6,7 +6,7 @@ const MetaTags = ({ title, description, imageUrl, url }) => {
 
     // Función para crear o actualizar una meta tag
     const setMetaTag = (name, content, property = false) => {
-      let tag = document.querySelector(property ? meta[property="${name}"] : meta[name="${name}"]);
+      let tag = document.querySelector(property ? `meta[property="${name}"]` : `meta[name="${name}"]`);
       if (!tag) {
         tag = document.createElement('meta');
         if (property) {

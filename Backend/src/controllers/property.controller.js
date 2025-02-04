@@ -107,6 +107,7 @@ export const createProperty = async (req, res) => {
       piso: Number(propertyData.piso) || 0,
       valorAdministracion: Number(propertyData.valorAdministracion) || 0,
       anioConstruccion: Number(propertyData.anioConstruccion) || 0,
+      useful_room: Number(propertyData.useful_room) || 0,
       disponible: Boolean(propertyData.disponible),
       caracteristicas: caracteristicas.map((caract) => ({
         name: caract.name,
@@ -164,6 +165,7 @@ export const updateProperty = async (req, res) => {
       estado,
       valorAdministracion,
       anioConstruccion,
+      useful_room,
       caracteristicas,
       description,
       images,

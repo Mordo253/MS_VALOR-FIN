@@ -22,6 +22,7 @@ const PropertyFormUP = ({ initialData, onChange, isSubmitting, isUpdate = false 
     disponible: true,
     valorAdministracion: "",
     anioConstruccion: "",
+    useful_room: "",
     description: "",
     creador: "",
     propietario: "",
@@ -184,6 +185,20 @@ const PropertyFormUP = ({ initialData, onChange, isSubmitting, isUpdate = false 
             min="0"
             required
             placeholder="Número de alcobas"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="alcobas" className="block text-sm font-medium text-gray-700">Cuartos Utiles</label>
+          <input
+            type="number"
+            id="useful_room"
+            name="useful_room"
+            value={propertyData.useful_room}
+            onChange={handleChange}
+            min="0"
+            required
+            placeholder="Número de cuartos utiles"
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>

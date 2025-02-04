@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import prerender from "prerender-node";
 import { SheetsSyncService } from './services/sheetsSyncService.js';
 import { testConnections } from './utils/testConnection.js';
 
@@ -18,6 +19,9 @@ import publicRoutes from "./routes/publicaciones.routes.js";
 
 // Cargar variables de entorno
 dotenv.config();
+
+// Configurar Prerender.io
+prerender.set('prerenderToken', process.env.PRERENDER_TOKEN);
 
 // Crear dos aplicaciones Express separadas
 const mainApp = express();
@@ -67,6 +71,7 @@ mainApp.use(morgan("dev"));
 mainApp.use(cookieParser());
 mainApp.use(express.json({ limit: '50mb' }));
 mainApp.use(express.urlencoded({ extended: true, limit: '50mb' }));
+mainApp.use(prerender); // Middleware de Prerender.io
 
 // Configurar syncApp (Aplicación de sincronización)
 syncApp.use(cors(corsOptions));
@@ -106,6 +111,12 @@ const initializeServices = async () => {
     } catch (error) {
         console.error('❌ Error durante la inicialización:', error);
         throw error; // Propagar el error para manejo superior
+    }
+    if (PRERENDER_TOKEN) {
+        prerender.set('prerenderToken', PRERENDER_TOKEN);
+        app.use(prerender);
+    } else {
+        console.error('⚠️ PRERENDER_TOKEN no está configurado en las variables de entorno.');
     }
 };
 

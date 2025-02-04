@@ -1,23 +1,40 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import AdvancedTooltip from '../../ui/Tooltips/AdvancedTooltip';
-
+import jfImg  from "../../../assets/WebJFG.png";
+import defaultImg from "../../../assets/Default_avatar.jpeg";
+import CMimg  from "../../../assets/WebCM.png";
+import angImg from "../../../assets/Angela_Rua.jpg";
 const AboutMe = () => {
   const teamMembers = [
     {
       name: 'Juan Fernando González',
       role: 'Director',
-      image: '/api/placeholder/150/150',
-      bio: 'Lorem ipsum, dolor sit amet consect',
+      image: `../${jfImg}`,
+      bio: '3160420188',
       WhatsApp: 'https://wa.me/573122259584?text=Hola Juan Fernando, estoy interesad@ en lo que ofrece MS De Valor',
     },
     {
       name: 'Claudia González',
-      role: 'Asesora financiera',
-      image: '/api/placeholder/150/150',
-      bio: 'Lorem ipsum, dolor sit amet consect',
+      role: 'Agente Inmobiliaria',
+      image: `../${defaultImg}`,
+      bio: '3160420188',
       WhatsApp: 'https://wa.me/573160420188?text=Hola Claudia, estoy interesad@ en lo que ofrece MS De Valor',
     },
+    // {
+    //     name: 'Carolina Montoya',
+    //     role: 'Agente Inmobiliaria',
+    //     image: `../${CMimg}`,
+    //     bio: '3160420188',
+    //     WhatsApp: 'https://wa.me/573160420188?text=Hola MS de Valor, estoy interesad@ en lo que ofrece MS De Valor',
+    //   },
+    //   {
+    //       name: 'Angela Rua',
+    //       role: 'Agente Inmobiliaria',
+    //       image: `../${angImg}`,
+    //       bio: '3160420188',
+    //       WhatsApp: 'https://wa.me/573160420188?text=Hola MS de Valor, estoy interesad@ en lo que ofrece MS De Valor',
+    //     },
   ];
 
   const containerVariants = {
