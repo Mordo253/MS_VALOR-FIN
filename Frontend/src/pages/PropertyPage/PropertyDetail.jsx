@@ -318,17 +318,17 @@ export const PropertyDetails = () => {
 
   const title = `${property.title} - ${property.codigo}`;
   const description = property.description || `${property.tipoInmueble} en ${property.ciudad}`;
-  const imageUrl = property?.images[0]?.secure_url;
+  const imageUrl = property.images.length > 0 ? property.images[0].secure_url : '/default-image.jpg';
   const url = window.location.href;
 
-  return (
-    <>
-      <MetaTags
-        title={title}
-        description={description}
-        imageUrl={imageUrl}
-        url={url}
-      />
+return (
+  <>
+    <MetaTags
+      title={title}
+      description={description}
+      imageUrl={imageUrl}
+      url={url}
+    />
       
       <div className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-16 lg:pt-12 xl:pt-16 2xl:pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

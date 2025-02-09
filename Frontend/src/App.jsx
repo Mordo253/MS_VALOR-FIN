@@ -17,6 +17,7 @@ import { ToolsPage } from "./pages/Tools/ToolsPage";
 import { Admin } from "./pages/Admin/layout/Admin";
 import { Footer } from "./components/Footer/Footer";
 import { Indicador } from './components/ecommerI/EcommerI';
+import MetaTags from './components/ui/Otter/MetaTags'; // Importar el componente MetaTags
 import './App.css';
 import { BlogPage } from './pages/BlogPage/BlogPage';
 import { PostProvider } from './context/PostContext';
@@ -41,27 +42,46 @@ const ScrollToTop = () => {
     };
 
     scrollToTopSmooth();
-
     const timeoutId = setTimeout(scrollToTopSmooth, 100);
-
     return () => clearTimeout(timeoutId);
   }, [pathname]);
 
   return null;
 };
 
-// Componente para envolver páginas
-const PageWrapper = ({ children }) => {
+// Componente para envolver páginas con meta tags por defecto
+const PageWrapper = ({ children, title, description, imageUrl }) => {
+  const defaultTitle = 'MS DE VALOR';
+  const defaultDescription = 'Tu mejor opción en propiedades y vehículos';
+  const defaultImage = 'URL_DE_TU_IMAGEN_POR_DEFECTO'; // Reemplaza con tu URL por defecto
+  
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  return <>{children}</>;
+  return (
+    <>
+      <MetaTags
+        title={title || defaultTitle}
+        description={description || defaultDescription}
+        imageUrl={imageUrl || defaultImage}
+        url={window.location.href}
+      />
+      {children}
+    </>
+  );
 };
 
 const AppContent = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
+
+  // Meta tags por defecto para la página principal
+  const defaultMeta = {
+    title: 'MS DE VALOR - Inicio',
+    description: 'Tu mejor opción en propiedades y vehículos',
+    imageUrl: '' // Reemplaza con tu URL por defecto
+  };
 
   return (
     <>
@@ -70,24 +90,148 @@ const AppContent = () => {
       <Header />
       <div className="content-wrapper">
         <Routes>
-          <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
-          <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
-          <Route path="/properties" element={<PageWrapper><PropertyPage /></PageWrapper>} />
-          <Route path="/properties-list" element={<PageWrapper><PropertyList /></PageWrapper>} />
-          <Route path="/properties/:id" element={<PageWrapper><PropertyDetails /></PageWrapper>} />
-          <Route path="/cars" element={<PageWrapper><CarPage /></PageWrapper>} />
-          <Route path="/cars-list" element={<PageWrapper><CarList /></PageWrapper>} />
-          <Route path="/cars/:id" element={<PageWrapper><CarDetails /></PageWrapper>} />
-          <Route path="/tools" element={<PageWrapper><ToolsPage /></PageWrapper>} />
-          <Route path="/blog" element={<PageWrapper><BlogPage /></PageWrapper>} />
-          <Route path="/posts-list" element={<PageWrapper><PostsList /></PageWrapper>} />
-          <Route path="/posts/:slug" element={<PageWrapper><PostDetails /></PageWrapper>} />
+          <Route 
+            path="/" 
+            element={
+              <PageWrapper {...defaultMeta}>
+                <HomePage />
+              </PageWrapper>
+            } 
+          />
+          
+          <Route 
+            path="/login" 
+            element={
+              <PageWrapper 
+                title="Iniciar Sesión - MS DE VALOR"
+                description="Accede a tu cuenta de MS DE VALOR"
+              >
+                <LoginPage />
+              </PageWrapper>
+            } 
+          />
+          
+          <Route 
+            path="/properties" 
+            element={
+              <PageWrapper 
+                title="Propiedades - MS DE VALOR"
+                description="Explora nuestra selección de propiedades"
+              >
+                <PropertyPage />
+              </PageWrapper>
+            } 
+          />
+          
+          <Route 
+            path="/properties-list" 
+            element={
+              <PageWrapper 
+                title="Listado de Propiedades - MS DE VALOR"
+                description="Lista completa de nuestras propiedades disponibles"
+              >
+                <PropertyList />
+              </PageWrapper>
+            } 
+          />
+          
+          <Route 
+            path="/properties/:id" 
+            element={<PropertyDetails />} // Los meta tags se manejan dentro del componente
+          />
+          
+          <Route 
+            path="/cars" 
+            element={
+              <PageWrapper 
+                title="Vehículos - MS DE VALOR"
+                description="Descubre nuestra selección de vehículos"
+              >
+                <CarPage />
+              </PageWrapper>
+            } 
+          />
+          
+          <Route 
+            path="/cars-list" 
+            element={
+              <PageWrapper 
+                title="Listado de Vehículos - MS DE VALOR"
+                description="Lista completa de nuestros vehículos disponibles"
+              >
+                <CarList />
+              </PageWrapper>
+            } 
+          />
+          
+          <Route 
+            path="/cars/:id" 
+            element={<CarDetails />} // Los meta tags se manejan dentro del componente
+          />
+          
+          <Route 
+            path="/tools" 
+            element={
+              <PageWrapper 
+                title="Herramientas - MS DE VALOR"
+                description="Herramientas útiles para tus decisiones inmobiliarias"
+              >
+                <ToolsPage />
+              </PageWrapper>
+            } 
+          />
+          
+          <Route 
+            path="/blog" 
+            element={
+              <PageWrapper 
+                title="Blog - MS DE VALOR"
+                description="Noticias y artículos sobre el mercado inmobiliario"
+              >
+                <BlogPage />
+              </PageWrapper>
+            } 
+          />
+          
+          <Route 
+            path="/posts-list" 
+            element={
+              <PageWrapper 
+                title="Artículos del Blog - MS DE VALOR"
+                description="Lee todos nuestros artículos y noticias"
+              >
+                <PostsList />
+              </PageWrapper>
+            } 
+          />
+          
+          <Route 
+            path="/posts/:slug" 
+            element={<PostDetails />} // Los meta tags se manejan dentro del componente
+          />
+          
           <Route element={<ProtectedRoute />}>
-            <Route path="/admin/*" element={<PageWrapper><Admin /></PageWrapper>} />
+            <Route 
+              path="/admin/*" 
+              element={
+                <PageWrapper 
+                  title="Administración - MS DE VALOR"
+                  description="Panel de administración"
+                >
+                  <Admin />
+                </PageWrapper>
+              } 
+            />
           </Route>
 
-          {/* Ruta para manejar páginas no encontradas */}
-          <Route path="*" element={<PageWrapper><HomePage /></PageWrapper>} />
+          <Route 
+            path="*" 
+            element={
+              <PageWrapper {...defaultMeta}>
+                <HomePage />
+              </PageWrapper>
+            } 
+          />
         </Routes>
       </div>
       {!isAdminRoute && <Footer />}
