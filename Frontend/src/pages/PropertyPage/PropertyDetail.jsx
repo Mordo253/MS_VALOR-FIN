@@ -43,7 +43,7 @@ const teamMembers = [
     name: 'Juan Fernando González',
     role: 'Director',
     image: `../${jfImg}`,
-    phone: '3160420188',
+    phone: '3122259584',
     WhatsApp: 'https://wa.me/573122259584?text=Hola Juan Fernando, estoy interesad@ en lo que ofrece MS De Valor',
   },
   {
@@ -57,14 +57,14 @@ const teamMembers = [
     name: 'Carolina Montoya',
     role: 'Agente Inmobiliaria',
     image: `../${CMimg}`,
-    phone: '3160420188',
+    phone: '3187084726',
     WhatsApp: 'https://wa.me/573160420188?text=Hola MS de Valor, estoy interesad@ en lo que ofrece MS De Valor',
   },
   {
     name: 'Angela Rua',
     role: 'Agente Inmobiliaria',
     image: `../${angImg}`,
-    phone: '3160420188',
+    phone: '3117046773',
     WhatsApp: 'https://wa.me/573160420188?text=Hola MS de Valor, estoy interesad@ en lo que ofrece MS De Valor',
   },
 ];

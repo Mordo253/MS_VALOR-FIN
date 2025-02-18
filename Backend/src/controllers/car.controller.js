@@ -105,9 +105,16 @@ export const updateCar = async (req, res) => {
       }
     }
 
-    // Procesar imágenes
+    // Procesar imágenes con formato por defecto
     const processedImages = await processImages(images, existingCar.images);
-    if (processedImages.length === 0) {
+    const defaultFormat = 'jpeg';  // Formato por defecto
+
+    const imagesWithDefaultFormat = processedImages.map(image => ({
+      ...image,
+      format: image.format || defaultFormat, // Asigna formato por defecto si no se proporciona
+    }));
+
+    if (imagesWithDefaultFormat.length === 0) {
       throw new Error("No se pudo procesar ninguna imagen correctamente");
     }
 
@@ -118,7 +125,7 @@ export const updateCar = async (req, res) => {
       kilometer: Number(carData.kilometer) || existingCar.kilometer,
       disponible: Boolean(carData.disponible),
       videos: videos || existingCar.videos,
-      images: processedImages,
+      images: imagesWithDefaultFormat,
       updatedAt: new Date(),
     });
 
@@ -138,6 +145,7 @@ export const updateCar = async (req, res) => {
     session.endSession();
   }
 };
+
 
 // Función auxiliar para procesar imágenes
 async function processImages(images, existingImages = []) {
