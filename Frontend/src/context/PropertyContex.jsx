@@ -157,7 +157,14 @@ export const PropertyProvider = ({ children }) => {
       console.log("Datos recibidos para actualizar:", propertyData);
   
       const processedData = {
-        ...propertyData,
+        title: propertyData.title,
+        description: propertyData.description,
+        ciudad: propertyData.ciudad,
+        zona: propertyData.zona,
+        barrio: propertyData.barrio,
+        direccion: propertyData.direccion,
+        tipoInmueble: propertyData.tipoInmueble,
+        tipoNegocio: propertyData.tipoNegocio,
         areaConstruida: Number(propertyData.areaConstruida) || 0,
         areaTerreno: Number(propertyData.areaTerreno) || 0,
         areaPrivada: Number(propertyData.areaPrivada) || 0,
@@ -170,32 +177,22 @@ export const PropertyProvider = ({ children }) => {
         valorAdministracion: Number(propertyData.valorAdministracion) || 0,
         anioConstruccion: Number(propertyData.anioConstruccion) || 0,
         useful_room: Number(propertyData.useful_room) || 0,
-        videos: propertyData.videos || '', // URL del video
-        creador: propertyData.creador || 'Administrador', // Valor por defecto
-        propietario: propertyData.propietario || 'Desconocido', // Valor por defecto
-        updatedAt: new Date().toISOString(),
-        images: (propertyData.images || []).map(img => ({
-          public_id: img.public_id,
-          secure_url: img.secure_url,
-          file: img.file || null,
-          resource_type: img.resource_type || 'image',
-        })).filter(img => img.file || img.secure_url),
-        imagesToDelete: (propertyData.imagesToDelete || []).filter(id => 
-          typeof id === 'string' && !id.startsWith('temp_')
-        )
+        caracteristicas: propertyData.caracteristicas || [],
+        videos: propertyData.videos || [],
+        disponible: Boolean(propertyData.disponible),
+        creador: propertyData.creador,
+        propietario: propertyData.propietario,
+        images: propertyData.images,
+        imagesToDelete: propertyData.imagesToDelete || []
       };
   
       console.log("Datos procesados antes de enviar:", processedData);
   
-      // Configurar la petición
       const response = await axios.put(
         `${API_URL}/property/properties/${id}`,
         processedData,
         {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 30000,
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
+          headers: { 'Content-Type': 'application/json' }
         }
       );
   
@@ -206,26 +203,15 @@ export const PropertyProvider = ({ children }) => {
       const updatedProperty = response.data.data;
   
       // Actualizar estados
-      setProperties((prev) => prev.map(p => p._id === updatedProperty._id ? updatedProperty : p));
-      setFilteredProperties((prev) => prev.map(p => p._id === updatedProperty._id ? updatedProperty : p));
+      setProperties(prev => prev.map(p => p._id === id ? updatedProperty : p));
+      setFilteredProperties(prev => prev.map(p => p._id === id ? updatedProperty : p));
   
       return response.data;
     } catch (error) {
-      console.error('Error al actualizar propiedad:', error.message || error.response);
-  
-      // Manejar errores específicos
-      if (error.response?.status === 413) {
-        throw new Error('Las imágenes son demasiado grandes. Por favor, reduzca su tamaño.');
-      } else if (error.code === 'ECONNABORTED') {
-        throw new Error('La operación tardó demasiado tiempo. Por favor, intente nuevamente.');
-      } else if (error.response?.data?.message) {
-        throw new Error(error.response.data.message);
-      } else {
-        throw new Error('Error al actualizar la propiedad. Por favor, intente nuevamente.');
-      }
+      console.error('Error al actualizar propiedad:', error);
+      throw new Error(error.response?.data?.message || 'Error al actualizar la propiedad');
     }
   };
-  
 
   // Eliminar propiedad
   const deleteProperty = async (id) => {

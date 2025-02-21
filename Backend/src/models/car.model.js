@@ -2,17 +2,19 @@ import mongoose from "mongoose";
 
 // Cloudinary image schema
 const cloudinaryImageSchema = new mongoose.Schema({
-  public_id: { type: String, required: true },
-  secure_url: { type: String, required: true },
-  width: { type: Number, required: true, default: 540 },  // Valor predeterminado
-  height: { type: Number, required: true, default: 1170 }, // Valor predeterminado
-  format: { type: String, required: true, default: 'jpg' }, // Valor predeterminado
+  public_id: { type: String, required: true, unique: true, trim: true },
+  secure_url: { type: String, required: true, trim: true },
+  width: { type: Number, required: true, default: 1080, min: 1 },
+  height: { type: Number, required: true, default: 1350, min: 1 },
+  format: { type: String, required: true, default: 'jpg', trim: true },
   resource_type: { 
     type: String, 
     required: true, 
     enum: ['image', 'video', 'raw', 'auto'], 
-    default: 'image'  // Valor predeterminado
+    default: 'image'
   },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
 const carSchema = new mongoose.Schema({

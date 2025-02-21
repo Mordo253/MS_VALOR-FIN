@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { FRONTEND_URL } from "../../config";
 
-// Función para formatear precios con formato colombiano y 2 decimales
+// Función para formatear precios con formato colombiano
 const formatPrice = (value) => {
   if (value === null || value === undefined) return '-';
   return Number(value).toLocaleString('es-CO', { 
@@ -30,7 +30,7 @@ const PriceChange = ({ currentPrice, previousPrice, hideArrow = false }) => {
   );
 };
 
-// Componente para mostrar un elemento financiero individual
+// Componente para mostrar un elemento financiero
 const FinancialItem = ({ symbol, name, price, previousPrice }) => {
   const displaySymbol = symbol.includes('USD') || symbol.includes('EUR') ? '$' : 
                        symbol.includes('IPC') || symbol.includes('TASA') || symbol.includes('DTF') ? '%' : '';
@@ -53,22 +53,19 @@ const FinancialItem = ({ symbol, name, price, previousPrice }) => {
 
 // Componente principal Indicador
 export const Indicador = () => {
-  // Estados del componente
   const [financialData, setFinancialData] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Efecto para detectar si es dispositivo móvil
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
-    handleResize(); // Verificación inicial
+    handleResize(); 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Función para obtener la ventana de tiempo actual
   const getCurrentWindow = () => {
     const now = new Date();
     const hour = now.getHours();
@@ -79,48 +76,33 @@ export const Indicador = () => {
     return null;
   };
 
-  // Función para determinar si se debe realizar una actualización
   const shouldUpdate = () => {
     const currentWindow = getCurrentWindow();
     if (!currentWindow) return false;
 
-    // Obtener la última ventana donde se hizo scraping
-    const lastScrapingWindow = localStorage.getItem('lastScrapingWindow');
-    const lastScrapingDate = localStorage.getItem('lastScrapingDate');
+    const lastScrapingWindow = localStorage.getItem('lastScrapingWindow') || '';
+    const lastScrapingDate = localStorage.getItem('lastScrapingDate') || '';
 
-    // Si no hay registro previo, permitir el scraping
-    if (!lastScrapingWindow || !lastScrapingDate) return true;
-
-    // Verificar si estamos en un nuevo día
     const today = new Date().toDateString();
-    if (lastScrapingDate !== today) return true;
-
-    // Si estamos en el mismo día, verificar si es una ventana diferente
-    return lastScrapingWindow !== currentWindow;
+    return lastScrapingDate !== today || lastScrapingWindow !== currentWindow;
   };
 
-  // Función para obtener los datos financieros
   const fetchData = async () => {
     try {
       setError(null);
       
       if (shouldUpdate()) {
         setIsUpdating(true);
-        
-        // Registrar el intento de scraping antes de hacer la petición
         const currentWindow = getCurrentWindow();
         const today = new Date().toDateString();
         localStorage.setItem('lastScrapingWindow', currentWindow);
         localStorage.setItem('lastScrapingDate', today);
         
-        const response = await fetch(`${FRONTEND_URL}/api/update-data`, {
-          method: 'POST'
-        });
-        
+        const response = await fetch(`${FRONTEND_URL}/api/update-data`, { method: 'POST' });
         if (!response.ok) throw new Error('Error en la actualización');
         
         const result = await response.json();
-        setFinancialData(result.data);
+        setFinancialData(Array.isArray(result.data) ? result.data : []);
         setLastUpdate(new Date());
         console.log('Scraping realizado en ventana:', currentWindow);
       } else {
@@ -128,49 +110,47 @@ export const Indicador = () => {
         if (!response.ok) throw new Error('Error al obtener datos');
         
         const data = await response.json();
-        setFinancialData(data);
+        setFinancialData(Array.isArray(data) ? data : []);
         setLastUpdate(new Date());
       }
     } catch (err) {
       console.error('Error:', err);
       setError(err.message);
+      setFinancialData([]); 
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // Efecto para iniciar la obtención de datos y configurar el intervalo
   useEffect(() => {
-    fetchData(); // Obtención inicial de datos
-    
-    // Configurar intervalo para verificar actualizaciones cada minuto
+    fetchData();
     const checkInterval = setInterval(() => {
       fetchData();
-    }, 60000); // 60000 ms = 1 minuto
-
-    // Limpiar intervalo al desmontar
+    }, 60000);
     return () => clearInterval(checkInterval);
   }, []);
 
-  // Ordenar datos por símbolo
-  const sortedData = [...financialData].sort((a, b) => a.symbol.localeCompare(b.symbol));
+  const sortedData = Array.isArray(financialData) ? [...financialData].sort((a, b) => a.symbol.localeCompare(b.symbol)) : [];
 
-  // Renderizado del componente
   return (
     <>
       <div className="fixed top-0 left-0 right-0 bg-gray-900 text-white h-12 overflow-hidden z-[1002]">
         <div className="h-full flex items-center justify-between">
           <div className="flex-1 overflow-hidden">
             <div className="ticker-track inline-flex">
-              {[...sortedData, ...sortedData, ...sortedData].map((item, index) => (
-                <FinancialItem
-                  key={`${item.symbol}-${index}`}
-                  symbol={item.symbol}
-                  name={item.name}
-                  price={item.price}
-                  previousPrice={item.previousPrice}
-                />
-              ))}
+              {sortedData.length > 0 ? (
+                [...sortedData, ...sortedData, ...sortedData].map((item, index) => (
+                  <FinancialItem
+                    key={`${item.symbol}-${index}`}
+                    symbol={item.symbol}
+                    name={item.name}
+                    price={item.price}
+                    previousPrice={item.previousPrice}
+                  />
+                ))
+              ) : (
+                <span className="text-gray-400 px-6">Cargando datos...</span>
+              )}
             </div>
           </div>
           {!isMobile && lastUpdate && (
