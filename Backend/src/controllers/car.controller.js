@@ -2,72 +2,63 @@ import mongoose from 'mongoose';
 import Car from '../models/car.model.js';
 import { uploadImage, deleteImage } from '../utils/cloudinary.js';
 
-async function processImages(images, carCode, existingImages = []) {
-  const processedImages = [];
-  const maxSize = 5 * 1024 * 1024;
-  const folderPath = `cars/${carCode}`;
-
-  for (const img of images) {
-    if (img.file && typeof img.file === 'string' && img.file.startsWith('data:')) {
-      const approximateSize = img.file.length * 0.75;
-      if (approximateSize > maxSize) {
-        throw new Error(`La imagen ${img.public_id || 'nueva'} excede el tamaño máximo de 5MB`);
-      }
-      
-      const result = await uploadImage(img.file, folderPath);
-      if (result) {
-        processedImages.push({
-          public_id: result.public_id,
-          secure_url: result.secure_url,
-          width: result.width || 0,
-          height: result.height || 0,
-          format: result.format || 'jpg',
-          resource_type: result.resource_type || 'image',
-        });
-      }
-    } else if (img.secure_url) {
-      processedImages.push(img);
-    }
-  }
-
-  return [...existingImages.filter(img => !images.some(i => i.public_id === img.public_id)), ...processedImages];
-}
-
+// ✅ Crear vehículo
 export const createCar = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
+
   try {
-    const { images, videos, creador, propietario, ...carData } = req.body;
-    if (!carData.title || !carData.car || !carData.tractionType || !creador || !propietario || !images?.length) {
-      throw new Error('Campos obligatorios faltantes');
+    const { images, videos, creador, propietario, ...vehicleData } = req.body;
+
+    if (!vehicleData.title || !vehicleData.price || !vehicleData.brand) {
+      throw new Error("Los campos título, precio y marca son obligatorios.");
+    }
+    if (!creador || !propietario) {
+      throw new Error("Los campos creador y propietario son obligatorios.");
+    }
+    if (!Array.isArray(images) || images.length === 0) {
+      throw new Error("Debe incluir al menos una imagen.");
+    }
+    if (videos && (!Array.isArray(videos) || videos.some(video => !video.id || !video.url))) {
+      throw new Error("El campo videos debe contener objetos con id y url válidos.");
     }
 
-    const lastCar = await Car.findOne().sort({ createdAt: -1 }).select('codigo').exec();
-    let newCode = 'CAR-00001';
-    if (lastCar?.codigo) {
-      const lastCodeNumber = parseInt(lastCar.codigo.split('-')[1], 10);
-      newCode = `CAR-${String(lastCodeNumber + 1).padStart(5, '0')}`;
+    const lastVehicle = await Car.findOne().sort({ createdAt: -1 }).select("codigo").exec();
+    let newCode = "CAR-00001";
+    if (lastVehicle?.codigo) {
+      const lastCodeNumber = parseInt(lastVehicle.codigo.split("-")[1], 10);
+      newCode = `CAR-${String(lastCodeNumber + 1).padStart(5, "0")}`;
     }
 
-    const processedImages = await processImages(images, newCode);
-    if (!processedImages.length) throw new Error('Error al procesar imágenes');
+    const processedImages = [];
+    for (const img of images) {
+      if (img.file && img.file.startsWith('data:')) {
+        const result = await uploadImage(img.file, 'vehicles', newCode);
+        if (result) {
+          processedImages.push(result);
+        }
+      }
+    }
 
-    const newCar = new Car({
-      ...carData,
+    if (processedImages.length === 0) {
+      throw new Error("No se pudo procesar ninguna imagen correctamente.");
+    }
+
+    const newVehicle = new Car({
+      ...vehicleData,
       codigo: newCode,
       creador,
       propietario,
       videos: videos || [],
-      price: Number(carData.price) || 0,
-      kilometer: Number(carData.kilometer) || 0,
-      disponible: Boolean(carData.disponible),
       images: processedImages,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    const savedCar = await newCar.save({ session });
+
+    const savedVehicle = await newVehicle.save({ session });
     await session.commitTransaction();
-    res.status(201).json({ success: true, message: 'Carro creado', data: savedCar });
+
+    res.status(201).json({ success: true, message: "Vehículo creado exitosamente", data: savedVehicle });
   } catch (error) {
     await session.abortTransaction();
     res.status(500).json({ success: false, message: error.message });
@@ -76,57 +67,65 @@ export const createCar = async (req, res) => {
   }
 };
 
+// ✅ Actualizar vehículo
 export const updateCar = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
   try {
-    const { id: carId } = req.params;
-    const { images, videos, imagesToDelete, ...carData } = req.body;
-    const existingCar = await Car.findById(carId);
-    if (!existingCar) throw new Error('Carro no encontrado');
-
-    if (imagesToDelete?.length) {
-      await Promise.all(imagesToDelete.map(publicId => deleteImage(publicId)));
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "ID de vehículo inválido" });
     }
 
-    const processedImages = await processImages(images, existingCar.codigo, existingCar.images);
-    if (!processedImages.length) throw new Error('Error al procesar imágenes');
+    const { images, imagesToDelete, ...updateData } = req.body;
+    const vehicle = await Car.findById(id);
+    if (!vehicle) {
+      return res.status(404).json({ success: false, message: "Vehículo no encontrado" });
+    }
 
-    Object.assign(existingCar, {
-      ...carData,
-      price: Number(carData.price) || existingCar.price,
-      kilometer: Number(carData.kilometer) || existingCar.kilometer,
-      disponible: Boolean(carData.disponible),
-      videos: videos || existingCar.videos,
-      images: processedImages,
-      updatedAt: new Date(),
-    });
+    if (Array.isArray(imagesToDelete)) {
+      for (const publicId of imagesToDelete) {
+        await deleteImage(publicId, "vehicles", vehicle.codigo);
+      }
+      vehicle.images = vehicle.images.filter(img => !imagesToDelete.includes(img.public_id));
+    }
 
-    const updatedCar = await existingCar.save({ session });
-    await session.commitTransaction();
-    res.status(200).json({ success: true, message: 'Carro actualizado', data: updatedCar });
+    if (Array.isArray(images)) {
+      for (const img of images) {
+        if (img.file && img.file.startsWith("data:")) {
+          const result = await uploadImage(img.file, "vehicles", vehicle.codigo);
+          if (result) vehicle.images.push(result);
+        }
+      }
+    }
+
+    Object.assign(vehicle, updateData, { updatedAt: new Date() });
+    await vehicle.save();
+
+    res.json({ success: true, message: "Vehículo actualizado exitosamente", data: vehicle });
   } catch (error) {
-    await session.abortTransaction();
     res.status(500).json({ success: false, message: error.message });
-  } finally {
-    session.endSession();
   }
 };
 
+// ✅ Eliminar vehículo
 export const deleteCar = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) throw new Error('ID inválido');
-
-    const car = await Car.findById(id).session(session);
-    if (!car) throw new Error('Vehículo no encontrado');
-
-    await Promise.all(car.images.map(img => deleteImage(img.public_id)));
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "ID de vehículo inválido" });
+    }
+    const vehicle = await Car.findById(id).session(session);
+    if (!vehicle) {
+      return res.status(404).json({ success: false, message: "Vehículo no encontrado" });
+    }
+    for (const image of vehicle.images) {
+      await deleteImage(image.public_id, "vehicles", vehicle.codigo);
+    }
     await Car.findByIdAndDelete(id).session(session);
     await session.commitTransaction();
-    res.status(200).json({ success: true, message: 'Vehículo eliminado' });
+
+    res.status(200).json({ success: true, message: "Vehículo eliminado correctamente" });
   } catch (error) {
     await session.abortTransaction();
     res.status(500).json({ success: false, message: error.message });
@@ -135,22 +134,27 @@ export const deleteCar = async (req, res) => {
   }
 };
 
-export const getAllCars = async (req, res) => {
+// ✅ Obtener todos los vehículos
+export const getAllCars = async (_req, res) => {
   try {
-    const cars = await Car.find();
-    res.status(200).json({ success: true, data: cars });
+    const vehicles = await Car.find();
+    res.status(200).json({ success: true, data: vehicles });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// ✅ Obtener un vehículo por ID
 export const getCarById = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: 'ID inválido' });
-    const car = await Car.findById(id);
-    if (!car) return res.status(404).json({ success: false, message: 'Vehículo no encontrado' });
-    res.status(200).json({ success: true, data: car });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "ID de vehículo inválido" });
+    }
+    const vehicle = await Car.findById(id);
+    if (!vehicle) return res.status(404).json({ success: false, message: "Vehículo no encontrado" });
+
+    res.status(200).json({ success: true, data: vehicle });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
