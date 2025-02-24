@@ -24,7 +24,7 @@ const caracteristicasInternas = [
   "Depósito", "Gas domiciliario", "Suelo de cerámica / mármol", "Zona de lavandería",
   "Aire acondicionado", "Balcón", "Biblioteca/Estudio", "Clósets", "Despensa", "Hall de alcobas",
   "Trifamiliar", "Alarma", "Baño auxiliar", "Calentador", "Cocina integral", "Doble Ventana",
-  "Reformado", "Unifamiliar"
+  "Reformado", "Unifamiliar,Sauna, Amoblado, Turco, Ascensor"
 ];
 
 const caracteristicasExternas = [
