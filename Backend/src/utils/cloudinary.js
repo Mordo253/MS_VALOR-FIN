@@ -1,8 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
-import mongoose from 'mongoose';
 import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_SECRET, CLOUDINARY_API_KEY } from '../config.js';
-import Property from '../models/property.model.js';
-import Car from '../models/car.model.js';
 
 // Configuración de Cloudinary
 cloudinary.config({
@@ -13,17 +10,17 @@ cloudinary.config({
 });
 
 // Función para subir imágenes
-export const uploadImage = async (file, type, codigo) => {
+export const uploadImage = async (file, type, codigo, slug) => {
   try {
     if (!file || !file.startsWith('data:')) {
       throw new Error('Archivo de imagen inválido');
     }
 
-    if (!codigo) {
-      throw new Error('Código de referencia no proporcionado');
+    if (!codigo && !slug) {
+      throw new Error('Debe proporcionarse un código o un slug.');
     }
 
-    const folderPath = `${type}/${codigo}`;
+    const folderPath = `${type}/${codigo || slug}`;
 
     const result = await cloudinary.uploader.upload(file, {
       folder: folderPath,

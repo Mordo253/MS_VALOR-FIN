@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 
-const PropertyImg = ({ initialImages = [], imageLimit = 15, onImageUpdate }) => {
+const PropertyImg = ({ initialImages = [], imageLimit = 20, onImageUpdate }) => {
   const [images, setImages] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [newImages, setNewImages] = useState([]);

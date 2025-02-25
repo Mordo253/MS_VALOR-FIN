@@ -23,7 +23,6 @@ export const createPost = async (req, res) => {
   try {
     const { images, title, content, ...postData } = req.body;
 
-    // Limpieza básica del contenido
     const cleanTitle = basicSanitize(title);
     const cleanContent = basicSanitize(content);
 
@@ -39,19 +38,17 @@ export const createPost = async (req, res) => {
       throw new Error("Debe incluir al menos una imagen");
     }
 
-    // Generar el código único para el nuevo post
     const lastPost = await Post.findOne()
       .sort({ createdAt: -1 })
       .select("codigo")
       .exec();
 
-    let newCode = "POST-00001"; // Código inicial
+    let newCode = "POST-00001";
     if (lastPost?.codigo) {
       const lastCodeNumber = parseInt(lastPost.codigo.split("-")[1], 10);
       newCode = `POST-${String(lastCodeNumber + 1).padStart(5, "0")}`;
     }
 
-    // Procesamiento de imágenes
     const processedImages = [];
     const maxSize = 5 * 1024 * 1024;
 
@@ -62,7 +59,8 @@ export const createPost = async (req, res) => {
           throw new Error(`Imagen ${img.public_id || "nueva"} excede el tamaño máximo de 5MB`);
         }
 
-        const result = await uploadImage(img.file);
+        const folder = newCode || postData.slug;
+        const result = await uploadImage(img.file, folder);
         if (result) {
           processedImages.push({
             public_id: result.public_id,
@@ -80,7 +78,6 @@ export const createPost = async (req, res) => {
       throw new Error("No se pudo procesar ninguna imagen correctamente");
     }
 
-    // Crear el nuevo post
     const newPost = new Post({
       ...postData,
       title: cleanTitle,
@@ -110,7 +107,6 @@ export const createPost = async (req, res) => {
     session.endSession();
   }
 };
-
 
 export const getAllPosts = async (req, res) => {
   try {
@@ -167,7 +163,6 @@ export const updatePost = async (req, res) => {
       throw new Error("Post no encontrado");
     }
 
-    // Limpieza básica del contenido
     const cleanTitle = title ? basicSanitize(title) : post.title;
     const cleanContent = content ? basicSanitize(content) : post.content;
 
@@ -179,7 +174,6 @@ export const updatePost = async (req, res) => {
       throw new Error("El contenido no puede estar vacío");
     }
 
-    // Procesar imágenes a eliminar
     if (imagesToDelete && Array.isArray(imagesToDelete)) {
       for (const publicId of imagesToDelete) {
         if (publicId && !publicId.startsWith('temp_')) {
@@ -188,7 +182,6 @@ export const updatePost = async (req, res) => {
       }
     }
 
-    // Procesar nuevas imágenes y mantener las existentes
     const processedImages = [];
     const maxSize = 5 * 1024 * 1024;
 
@@ -200,7 +193,8 @@ export const updatePost = async (req, res) => {
             throw new Error(`Imagen ${img.public_id || 'nueva'} excede el tamaño máximo de 5MB`);
           }
 
-          const result = await uploadImage(img.file);
+          const folder = post.codigo || post.slug;
+          const result = await uploadImage(img.file, folder);
           if (result) {
             processedImages.push({
               public_id: result.public_id,
@@ -221,14 +215,13 @@ export const updatePost = async (req, res) => {
       throw new Error("Debe mantener al menos una imagen");
     }
 
-    // Actualizar el post
     const updatedPost = await Post.findOneAndUpdate(
       { slug: req.params.slug },
       {
         ...postData,
         title: cleanTitle,
         content: cleanContent,
-        codigo: postData.codigo || post.codigo, // Incluir el código si está presente en la solicitud
+        codigo: postData.codigo || post.codigo,
         images: processedImages,
         disponible: postData.disponible !== undefined ? Boolean(postData.disponible) : post.disponible,
       },
@@ -266,7 +259,6 @@ export const deletePost = async (req, res) => {
       throw new Error('Post no encontrado');
     }
 
-    // Eliminar todas las imágenes asociadas
     for (const image of post.images) {
       if (image.public_id) {
         await deleteImage(image.public_id);
