@@ -6,6 +6,8 @@ import { uploadImage, deleteImage } from '../utils/cloudinary.js';
 export const createProperty = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
+  console.log("Datos recibidos en el backend:", req.body);
+
 
   try {
     const { images, caracteristicas, videos, creador, propietario, ...propertyData } = req.body;

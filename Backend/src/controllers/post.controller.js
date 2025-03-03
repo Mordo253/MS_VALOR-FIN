@@ -59,8 +59,8 @@ export const createPost = async (req, res) => {
           throw new Error(`Imagen ${img.public_id || "nueva"} excede el tamaño máximo de 5MB`);
         }
 
-        const folder = newCode || postData.slug;
-        const result = await uploadImage(img.file, folder);
+        // Enviando todos los parámetros requeridos a uploadImage
+        const result = await uploadImage(img.file, "posts", newCode, postData.slug);
         if (result) {
           processedImages.push({
             public_id: result.public_id,
@@ -177,7 +177,7 @@ export const updatePost = async (req, res) => {
     if (imagesToDelete && Array.isArray(imagesToDelete)) {
       for (const publicId of imagesToDelete) {
         if (publicId && !publicId.startsWith('temp_')) {
-          await deleteImage(publicId);
+          await deleteImage(publicId, "posts", post.codigo);
         }
       }
     }
@@ -193,8 +193,8 @@ export const updatePost = async (req, res) => {
             throw new Error(`Imagen ${img.public_id || 'nueva'} excede el tamaño máximo de 5MB`);
           }
 
-          const folder = post.codigo || post.slug;
-          const result = await uploadImage(img.file, folder);
+          // Enviando todos los parámetros requeridos a uploadImage
+          const result = await uploadImage(img.file, "posts", post.codigo, post.slug);
           if (result) {
             processedImages.push({
               public_id: result.public_id,
@@ -261,7 +261,7 @@ export const deletePost = async (req, res) => {
 
     for (const image of post.images) {
       if (image.public_id) {
-        await deleteImage(image.public_id);
+        await deleteImage(image.public_id, "posts", post.codigo);
       }
     }
 
@@ -354,4 +354,4 @@ export const searchPosts = async (req, res) => {
       message: 'Error al buscar posts'
     });
   }
-}; 
+};

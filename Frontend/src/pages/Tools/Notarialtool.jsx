@@ -15,7 +15,7 @@ export const NotarialCalculator = () => {
     copias: 70000,
     impuestoBeneficencia: 0,
     impuestoRegistro: 0,
-    certificado: 20900,
+    certificado: 21900,
   });
 
   const formatInputCurrency = (value) => {
@@ -72,7 +72,7 @@ export const NotarialCalculator = () => {
       copias: 70000, // Valor fijo aproximado
       impuestoBeneficencia,
       impuestoRegistro,
-      certificado: 20900, // Valor fijo aproximado
+      certificado: 21900, // Valor fijo aproximado
     });
   };
 
