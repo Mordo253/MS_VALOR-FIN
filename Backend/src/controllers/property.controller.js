@@ -4,51 +4,131 @@ import { uploadImage, deleteImage } from '../utils/cloudinary.js';
 
 // ✅ Crear propiedad
 export const createProperty = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  console.log("Datos recibidos en el backend:", req.body);
-
-
+  let session;
   try {
+    // Iniciar sesión y transacción
+    session = await mongoose.startSession();
+    session.startTransaction();
+    
+    console.log("Datos recibidos en el backend:", req.body);
+    console.log("IP del cliente:", req.ip);
+    console.log("Agente de usuario:", req.headers['user-agent']);
+
     const { images, caracteristicas, videos, creador, propietario, ...propertyData } = req.body;
 
-    if (!propertyData.title || !propertyData.ciudad || !propertyData.costo) {
-      throw new Error("Los campos título, ciudad y costo son obligatorios.");
+    // Validación exhaustiva de datos con mensajes específicos
+    const validationErrors = [];
+    
+    // Validar campos obligatorios básicos
+    if (!propertyData.title) validationErrors.push("El título es obligatorio");
+    if (!propertyData.ciudad) validationErrors.push("La ciudad es obligatoria");
+    if (!propertyData.costo) validationErrors.push("El costo es obligatorio");
+    
+    // Validar campos de identificación
+    if (!creador) {
+      validationErrors.push("El campo creador es obligatorio");
+      console.log("Creador no especificado en la solicitud");
+    } else {
+      console.log("Creador identificado:", creador);
     }
-    if (!creador || !propietario) {
-      throw new Error("Los campos creador y propietario son obligatorios.");
+    
+    if (!propietario) {
+      validationErrors.push("El campo propietario es obligatorio");
+      console.log("Propietario no especificado en la solicitud");
+    } else {
+      console.log("Propietario identificado:", propietario);
     }
-    if (!Array.isArray(images) || images.length === 0) {
-      throw new Error("Debe incluir al menos una imagen.");
+    
+    // Validar imágenes
+    if (!images) {
+      validationErrors.push("El campo images es obligatorio");
+    } else if (!Array.isArray(images)) {
+      validationErrors.push("El campo images debe ser un array");
+      console.log("Tipo de 'images' recibido:", typeof images);
+    } else if (images.length === 0) {
+      validationErrors.push("Debe incluir al menos una imagen");
+    } else {
+      console.log(`Número de imágenes recibidas: ${images.length}`);
+      // Validar formato de cada imagen
+      images.forEach((img, index) => {
+        if (!img.file) {
+          validationErrors.push(`La imagen #${index + 1} no tiene propiedad 'file'`);
+        } else if (typeof img.file !== 'string' || !img.file.startsWith('data:')) {
+          validationErrors.push(`La imagen #${index + 1} no tiene un formato de base64 válido`);
+        }
+      });
     }
-    if (videos && (!Array.isArray(videos) || videos.some(video => !video.id || !video.url))) {
-      throw new Error("El campo videos debe contener objetos con id y url válidos.");
+    
+    // Validar videos (si existen)
+    if (videos) {
+      if (!Array.isArray(videos)) {
+        validationErrors.push("El campo videos debe ser un array");
+        console.log("Tipo de 'videos' recibido:", typeof videos);
+      } else {
+        videos.forEach((video, index) => {
+          if (!video.id) validationErrors.push(`El video #${index + 1} no tiene ID`);
+          if (!video.url) validationErrors.push(`El video #${index + 1} no tiene URL`);
+        });
+      }
     }
-    if (!Array.isArray(caracteristicas)) {
-      throw new Error("Las características deben ser un array válido.");
+    
+    // Validar características
+    if (!caracteristicas) {
+      validationErrors.push("El campo características es obligatorio");
+    } else if (!Array.isArray(caracteristicas)) {
+      validationErrors.push("El campo características debe ser un array");
+      console.log("Tipo de 'caracteristicas' recibido:", typeof caracteristicas);
+    }
+    
+    // Si hay errores de validación, lanzar excepción con todos los errores
+    if (validationErrors.length > 0) {
+      throw new Error(`Errores de validación: ${validationErrors.join(", ")}`);
     }
 
+    // Generar código único
+    console.log("Generando código único para la propiedad...");
     const lastProperty = await Property.findOne().sort({ createdAt: -1 }).select("codigo").exec();
     let newCode = "MSV-00001";
     if (lastProperty?.codigo) {
       const lastCodeNumber = parseInt(lastProperty.codigo.split("-")[1], 10);
       newCode = `MSV-${String(lastCodeNumber + 1).padStart(5, "0")}`;
     }
+    console.log("Código generado:", newCode);
 
+    // Procesar imágenes
+    console.log("Iniciando procesamiento de imágenes...");
     const processedImages = [];
-    for (const img of images) {
-      if (img.file && img.file.startsWith('data:')) {
-        const result = await uploadImage(img.file, 'properties', newCode);
-        if (result) {
-          processedImages.push(result);
+    let imageErrors = [];
+    
+    for (let i = 0; i < images.length; i++) {
+      const img = images[i];
+      try {
+        if (img.file && img.file.startsWith('data:')) {
+          console.log(`Procesando imagen #${i + 1}...`);
+          const result = await uploadImage(img.file, 'properties', newCode);
+          if (result) {
+            processedImages.push(result);
+            console.log(`Imagen #${i + 1} procesada exitosamente`);
+          } else {
+            imageErrors.push(`La imagen #${i + 1} no pudo ser procesada (resultado nulo)`);
+          }
+        } else {
+          imageErrors.push(`La imagen #${i + 1} no tiene un formato válido`);
         }
+      } catch (imgError) {
+        console.error(`Error al procesar imagen #${i + 1}:`, imgError);
+        imageErrors.push(`Error al procesar imagen #${i + 1}: ${imgError.message}`);
       }
     }
 
     if (processedImages.length === 0) {
-      throw new Error("No se pudo procesar ninguna imagen correctamente.");
+      throw new Error(`No se pudo procesar ninguna imagen correctamente. Errores: ${imageErrors.join(", ")}`);
+    } else if (imageErrors.length > 0) {
+      console.warn("Algunas imágenes no pudieron ser procesadas:", imageErrors);
     }
 
+    // Crear la propiedad
+    console.log("Creando objeto de propiedad...");
     const newProperty = new Property({
       ...propertyData,
       codigo: newCode,
@@ -61,15 +141,77 @@ export const createProperty = async (req, res) => {
       updatedAt: new Date(),
     });
 
+    // Guardar la propiedad
+    console.log("Guardando propiedad en la base de datos...");
     const savedProperty = await newProperty.save({ session });
+    console.log("Propiedad guardada con éxito. ID:", savedProperty._id);
+    
+    // Confirmar transacción
     await session.commitTransaction();
+    console.log("Transacción confirmada");
 
-    res.status(201).json({ success: true, message: "Propiedad creada exitosamente", data: savedProperty });
+    // Enviar respuesta exitosa
+    res.status(201).json({ 
+      success: true, 
+      message: "Propiedad creada exitosamente", 
+      data: savedProperty 
+    });
+    
   } catch (error) {
-    await session.abortTransaction();
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error en createProperty:", error);
+    
+    // Información detallada del error
+    let errorDetails = {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    };
+    
+    // Si es un error de MongoDB, añadir detalles específicos
+    if (error.code) {
+      errorDetails.code = error.code;
+      errorDetails.codeName = error.codeName;
+      
+      // Errores específicos de MongoDB
+      if (error.code === 11000) {
+        errorDetails.message = "Datos duplicados detectados. Posible propiedad ya existente.";
+        if (error.keyValue) {
+          errorDetails.duplicateKey = error.keyValue;
+        }
+      }
+    }
+    
+    // Abortar transacción si está activa
+    if (session) {
+      try {
+        await session.abortTransaction();
+        console.log("Transacción abortada debido a un error");
+      } catch (abortError) {
+        console.error("Error al abortar la transacción:", abortError);
+      }
+    }
+    
+    // Determinar código de respuesta apropiado
+    let statusCode = 500;
+    if (error.message.includes("validación") || error.name === "ValidationError") {
+      statusCode = 400;
+    } else if (error.code === 11000) {
+      statusCode = 409; // Conflicto por duplicación
+    }
+    
+    // Enviar respuesta con detalles del error
+    res.status(statusCode).json({ 
+      success: false, 
+      message: error.message,
+      details: errorDetails,
+      source: "createProperty"
+    });
   } finally {
-    session.endSession();
+    // Cerrar sesión si está abierta
+    if (session) {
+      session.endSession();
+      console.log("Sesión de base de datos cerrada");
+    }
   }
 };
 
