@@ -68,7 +68,13 @@ export const PropertyProvider = ({ children }) => {
 
   const createProperty = async (propertyData) => {
     try {
-      console.log("Datos que se envían al backend:", propertyData);
+      // Transformar características
+      const formattedCaracteristicas = [
+        ...(propertyData.caracteristicas?.internas || []).map(name => ({ name, type: 'interna' })),
+        ...(propertyData.caracteristicas?.externas || []).map(name => ({ name, type: 'externa' }))
+      ];
+
+      console.log("Datos originales recibidos:", propertyData);
   
       // Procesar los datos numéricos y otros campos
       const processedData = {
@@ -85,9 +91,10 @@ export const PropertyProvider = ({ children }) => {
         valorAdministracion: Number(propertyData.valorAdministracion) || 0,
         anioConstruccion: Number(propertyData.anioConstruccion) || 0,
         useful_room: Number(propertyData.useful_room) || 0,
-        videos: propertyData.videos || '', // URL del video
+        videos: propertyData.videos || [], // Cambiar a array vacío
         creador: propertyData.creador || 'Administrador', // Valor por defecto
-        propietario: propertyData.propietario || 'Desconocido' // Valor por defecto
+        propietario: propertyData.propietario || 'Desconocido', // Valor por defecto
+        caracteristicas: formattedCaracteristicas // Usar características formateadas
       };
   
       console.log("Datos procesados antes de enviar:", processedData);
@@ -123,9 +130,8 @@ export const PropertyProvider = ({ children }) => {
     }
   };
   
-  
-  // Obtener una propiedad específica
-  const getProperty = async (id) => {
+   // Obtener una propiedad específica
+   const getProperty = async (id) => {
     try {
       const response = await axios.get(`${API_URL}/property/properties/${id}`);
       if (!response.data) {
@@ -154,17 +160,15 @@ export const PropertyProvider = ({ children }) => {
 
   const updateProperty = async (id, propertyData) => {
     try {
-      console.log("Datos recibidos para actualizar:", propertyData);
-  
+      // Transformar características para actualización
+      const formattedCaracteristicas = [
+        ...(propertyData.caracteristicas?.internas || []).map(name => ({ name, type: 'interna' })),
+        ...(propertyData.caracteristicas?.externas || []).map(name => ({ name, type: 'externa' }))
+      ];
+
       const processedData = {
-        title: propertyData.title,
-        description: propertyData.description,
-        ciudad: propertyData.ciudad,
-        zona: propertyData.zona,
-        barrio: propertyData.barrio,
-        direccion: propertyData.direccion,
-        tipoInmueble: propertyData.tipoInmueble,
-        tipoNegocio: propertyData.tipoNegocio,
+        ...propertyData,
+        caracteristicas: formattedCaracteristicas,
         areaConstruida: Number(propertyData.areaConstruida) || 0,
         areaTerreno: Number(propertyData.areaTerreno) || 0,
         areaPrivada: Number(propertyData.areaPrivada) || 0,
@@ -177,11 +181,8 @@ export const PropertyProvider = ({ children }) => {
         valorAdministracion: Number(propertyData.valorAdministracion) || 0,
         anioConstruccion: Number(propertyData.anioConstruccion) || 0,
         useful_room: Number(propertyData.useful_room) || 0,
-        caracteristicas: propertyData.caracteristicas || [],
         videos: propertyData.videos || [],
         disponible: Boolean(propertyData.disponible),
-        creador: propertyData.creador,
-        propietario: propertyData.propietario,
         images: propertyData.images,
         imagesToDelete: propertyData.imagesToDelete || []
       };

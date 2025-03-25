@@ -28,7 +28,7 @@ const caracteristicasInternas = [
 ];
 
 const caracteristicasExternas = [
-  "Acceso pavimentado", "Barbacoa / Parrilla / Quincho", "Cancha de futbol", "Circuito cerrado de TV",
+  "Acceso pavimentado","Acensor", "Barbacoa / Parrilla / Quincho", "Cancha de futbol", "Circuito cerrado de TV",
   "Cochera / Garaje", "Gimnasio", "Oficina de negocios", "Patio", "Portería / Recepción", "Sistema de riego",
   "Trans. público cercano", "Vivienda unifamiliar", "Zona infantil", "Zonas verdes", "Árboles frutales",
   "Bosque nativos", "Centros comerciales", "Club House", "Colegios / Universidades", "Jardín",
