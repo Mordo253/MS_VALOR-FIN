@@ -24,7 +24,7 @@ const caracteristicasInternas = [
   "Depósito", "Gas domiciliario", "Suelo de cerámica / mármol", "Zona de lavandería",
   "Aire acondicionado", "Balcón", "Biblioteca/Estudio", "Clósets", "Despensa", "Hall de alcobas",
   "Trifamiliar", "Alarma", "Baño auxiliar", "Calentador", "Cocina integral", "Doble Ventana",
-  "Reformado", "Unifamiliar,Sauna, Amoblado, Turco, Ascensor"
+  "Reformado", "Unifamiliar","Sauna", "Amoblado"
 ];
 
 const caracteristicasExternas = [
@@ -74,6 +74,9 @@ const propertySchema = new mongoose.Schema({
     type: [caracteristicaSchema],
     validate: {
       validator: function (value) {
+        // Permitir arrays vacíos
+        if (!value || value.length === 0) return true;
+        
         return value.every(caracteristica =>
           caracteristica.type === 'interna'
             ? caracteristicasInternas.includes(caracteristica.name)
