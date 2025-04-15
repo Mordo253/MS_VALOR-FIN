@@ -6,10 +6,8 @@ import { uploadImage, deleteImage } from '../utils/cloudinary.js';
 export const createCar = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-
   try {
     const { images, videos, creador, propietario, ...vehicleData } = req.body;
-
     if (!vehicleData.title || !vehicleData.price || !vehicleData.brand) {
       throw new Error("Los campos título, precio y marca son obligatorios.");
     }
