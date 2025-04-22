@@ -14,6 +14,7 @@ import propertyRoutes from "./routes/property.routes.js";
 import scraperRoutes from "./routes/scraper.routes.js";
 import carRoutes from "./routes/car.routes.js";
 import postRoutes from "./routes/post.routes.js";
+import serviceRoutes from "./routes/service.routes.js";
 import publicRoutes from "./routes/publicaciones.routes.js";
 
 // Cargar variables de entorno
@@ -115,6 +116,7 @@ mainApp.use("/api/auth", authRoutes);
 mainApp.use("/api/property", propertyRoutes);
 mainApp.use("/api/car", carRoutes);
 mainApp.use("/api/post", postRoutes);
+mainApp.use("/api/service", serviceRoutes);
 mainApp.use("/api/public", publicRoutes);
 mainApp.use("/api", scraperRoutes);
 
