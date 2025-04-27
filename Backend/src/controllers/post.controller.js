@@ -174,15 +174,19 @@ export const updatePost = async (req, res) => {
       throw new Error("El contenido no puede estar vacío");
     }
 
+    // Eliminar imágenes solicitadas
     if (imagesToDelete && Array.isArray(imagesToDelete)) {
       for (const publicId of imagesToDelete) {
         if (publicId && !publicId.startsWith('temp_')) {
           await deleteImage(publicId, "posts", post.codigo);
         }
       }
+      // Filtrar las imágenes que no se van a eliminar
+      post.images = post.images.filter(img => !imagesToDelete.includes(img.public_id));
     }
 
-    const processedImages = [];
+    // Procesar nuevas imágenes
+    const newImages = [];
     const maxSize = 5 * 1024 * 1024;
 
     if (images && Array.isArray(images)) {
@@ -196,7 +200,7 @@ export const updatePost = async (req, res) => {
           // Enviando todos los parámetros requeridos a uploadImage
           const result = await uploadImage(img.file, "posts", post.codigo, post.slug);
           if (result) {
-            processedImages.push({
+            newImages.push({
               public_id: result.public_id,
               secure_url: result.secure_url,
               width: result.width || 0,
@@ -205,10 +209,28 @@ export const updatePost = async (req, res) => {
               resource_type: result.resource_type,
             });
           }
-        } else if (img.secure_url && !img.secure_url.startsWith('blob:')) {
-          processedImages.push(img);
         }
       }
+    }
+
+    // SOLUCIÓN: Actualizar el orden de las imágenes existentes
+    let processedImages = [];
+    if (Array.isArray(images) && images.length > 0) {
+      // Si no hay nuevas imágenes para agregar y solo es reordenamiento
+      if (newImages.length === 0 && (!imagesToDelete || imagesToDelete.length === 0)) {
+        console.log("Actualizando orden de imágenes existentes");
+        processedImages = images;
+      }
+      // Si hay nuevas imágenes o se eliminaron algunas, combinar las existentes con las nuevas
+      else {
+        console.log("Combinando imágenes existentes con nuevas imágenes");
+        // Filtrar solo las imágenes existentes (que no tengan file)
+        const existingImages = images.filter(img => !img.file && !img.secure_url.startsWith('blob:'));
+        processedImages = [...existingImages, ...newImages];
+      }
+    } else {
+      // Si no se proporcionan imágenes, conservar las actuales menos las eliminadas
+      processedImages = post.images;
     }
 
     if (processedImages.length === 0) {
@@ -246,7 +268,6 @@ export const updatePost = async (req, res) => {
     session.endSession();
   }
 };
-
 
 export const deletePost = async (req, res) => {
   const session = await mongoose.startSession();

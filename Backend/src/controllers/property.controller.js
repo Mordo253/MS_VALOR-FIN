@@ -215,7 +215,7 @@ export const createProperty = async (req, res) => {
   }
 };
 
-// ✅ Actualizar propiedad
+// ✅ Actualizar propiedad (SOLUCIÓN ACTUALIZADA)
 export const updateProperty = async (req, res) => {
   try {
     const { id } = req.params;
@@ -225,33 +225,58 @@ export const updateProperty = async (req, res) => {
     }
 
     const { images, imagesToDelete, ...updateData } = req.body;
+    console.log("datos recibidos", images);
     
     const property = await Property.findById(id);
     if (!property) {
       return res.status(404).json({ success: false, message: "Propiedad no encontrada" });
     }
 
-    if (Array.isArray(imagesToDelete)) {
+    // Eliminar imágenes solicitadas
+    if (Array.isArray(imagesToDelete) && imagesToDelete.length > 0) {
       for (const publicId of imagesToDelete) {
         await deleteImage(publicId, "properties", property.codigo);
       }
       property.images = property.images.filter(img => !imagesToDelete.includes(img.public_id));
     }
 
+    // Procesar nuevas imágenes (aquellas con campo 'file')
+    const newImages = [];
     if (Array.isArray(images)) {
       for (const img of images) {
         if (img.file && img.file.startsWith("data:")) {
           const result = await uploadImage(img.file, "properties", property.codigo);
-          if (result) property.images.push(result);
+          if (result) newImages.push(result);
         }
       }
     }
 
+    // SOLUCIÓN: Actualizar el orden de las imágenes existentes
+    if (Array.isArray(images) && images.length > 0) {
+      // Si no hay nuevas imágenes para agregar y solo es reordenamiento
+      if (newImages.length === 0 && (!imagesToDelete || imagesToDelete.length === 0)) {
+        console.log("Actualizando orden de imágenes existentes");
+        property.images = images;
+      } 
+      // Si hay nuevas imágenes o se eliminaron algunas, combinar las existentes con las nuevas
+      else {
+        console.log("Combinando imágenes existentes con nuevas imágenes");
+        // Filtrar solo las imágenes existentes (que no tengan file)
+        const existingImages = images.filter(img => !img.file);
+        property.images = [...existingImages, ...newImages];
+      }
+    }
+
+    // Actualizar el resto de datos de la propiedad
     Object.assign(property, updateData, { updatedAt: new Date() });
+    
+    // Guardar los cambios en la base de datos
     await property.save();
+    console.log("Propiedad actualizada exitosamente con imágenes reordenadas");
 
     res.json({ success: true, message: "Propiedad actualizada exitosamente", data: property });
   } catch (error) {
+    console.error("Error en updateProperty:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

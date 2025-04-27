@@ -30,10 +30,16 @@ export const createCar = async (req, res) => {
 
     const processedImages = [];
     for (const img of images) {
-      if (img.file && img.file.startsWith('data:')) {
+      if (img.file && (typeof img.file === 'string') && img.file.startsWith('data:')) {
         const result = await uploadImage(img.file, 'vehicles', newCode);
         if (result) {
-          processedImages.push(result);
+          processedImages.push({
+            ...result,
+            width: result.width || 1,
+            height: result.height || 1,
+            isMain: img.isMain || false,
+            gridPosition: img.gridPosition || 0
+          });
         }
       }
     }
@@ -74,32 +80,117 @@ export const updateCar = async (req, res) => {
     }
 
     const { images, imagesToDelete, ...updateData } = req.body;
+    console.log("Datos recibidos en el backend - updateCar:", { 
+      imageCount: images?.length, 
+      imagesToDeleteCount: imagesToDelete?.length 
+    });
+    
     const vehicle = await Car.findById(id);
     if (!vehicle) {
       return res.status(404).json({ success: false, message: "Vehículo no encontrado" });
     }
 
-    if (Array.isArray(imagesToDelete)) {
+    // Paso 1: Eliminar imágenes solicitadas
+    if (Array.isArray(imagesToDelete) && imagesToDelete.length > 0) {
+      console.log("Imágenes a eliminar:", imagesToDelete);
       for (const publicId of imagesToDelete) {
-        await deleteImage(publicId, "vehicles", vehicle.codigo);
-      }
-      vehicle.images = vehicle.images.filter(img => !imagesToDelete.includes(img.public_id));
-    }
-
-    if (Array.isArray(images)) {
-      for (const img of images) {
-        if (img.file && img.file.startsWith("data:")) {
-          const result = await uploadImage(img.file, "vehicles", vehicle.codigo);
-          if (result) vehicle.images.push(result);
+        if (publicId) {
+          await deleteImage(publicId, "vehicles", vehicle.codigo);
         }
       }
     }
 
-    Object.assign(vehicle, updateData, { updatedAt: new Date() });
-    await vehicle.save();
+    // Paso 2: Procesar nuevas imágenes (con campo 'file' que empieza con data:)
+    const newUploadedImages = [];
+    if (Array.isArray(images)) {
+      for (const img of images) {
+        if (img.file && typeof img.file === 'string' && img.file.startsWith("data:")) {
+          console.log("Procesando nueva imagen para subir");
+          const result = await uploadImage(img.file, "vehicles", vehicle.codigo);
+          if (result) {
+            // Añadir propiedades adicionales que maneja el frontend
+            newUploadedImages.push({
+              ...result,
+              width: result.width || 1,
+              height: result.height || 1,
+              format: img.format || '',
+              isMain: img.isMain || false,
+              gridPosition: img.gridPosition || 0
+            });
+          }
+        }
+      }
+    }
 
-    res.json({ success: true, message: "Vehículo actualizado exitosamente", data: vehicle });
+    // Paso 3: Reorganizar las imágenes existentes y combinar con las nuevas
+    let updatedImages = [];
+    
+    if (Array.isArray(images) && images.length > 0) {
+      // Crear un mapa de las imágenes existentes por public_id para acceso rápido
+      const existingImagesMap = {};
+      vehicle.images.forEach(img => {
+        if (img.public_id) {
+          existingImagesMap[img.public_id] = {
+            public_id: img.public_id,
+            secure_url: img.secure_url,
+            width: img.width || 1,
+            height: img.height || 1,
+            format: img.format || '',
+            resource_type: img.resource_type || 'image'
+          };
+        }
+      });
+      
+      // Filtrar las imágenes existentes (sin campo file y que no estén en imagesToDelete)
+      const retainedImages = images
+        .filter(img => !img.file && img.public_id && (!imagesToDelete || !imagesToDelete.includes(img.public_id)))
+        .map(img => {
+          // Mantener todas las propiedades originales de la imagen existente
+          const originalImg = existingImagesMap[img.public_id];
+          if (originalImg) {
+            return {
+              ...originalImg,
+              isMain: img.isMain || false,
+              gridPosition: img.gridPosition || 0
+            };
+          }
+          return img;
+        });
+      
+      // Combinar imágenes existentes con nuevas subidas manteniendo el orden
+      updatedImages = [...retainedImages, ...newUploadedImages];
+      
+      // Asegurarse de que la imagen principal está marcada correctamente
+      updatedImages = updatedImages.map((img, index) => ({
+        ...img,
+        isMain: index === 0, // La primera es siempre la principal
+        gridPosition: index
+      }));
+    } else {
+      // Si no se proporciona un nuevo orden, mantener las imágenes existentes y añadir nuevas
+      const existingImages = vehicle.images.filter(img => 
+        !imagesToDelete || !imagesToDelete.includes(img.public_id)
+      );
+      updatedImages = [...existingImages, ...newUploadedImages];
+    }
+
+    // Actualizar el vehículo con todas las modificaciones
+    Object.assign(vehicle, updateData, { 
+      images: updatedImages,
+      updatedAt: new Date() 
+    });
+    
+    // Guardar los cambios en la base de datos
+    const updatedVehicle = await vehicle.save();
+    console.log("Vehículo actualizado exitosamente con", updatedImages.length, "imágenes");
+    
+    res.json({ 
+      success: true, 
+      message: "Vehículo actualizado exitosamente", 
+      data: updatedVehicle 
+    });
   } catch (error) {
+    console.error("Error en updateCar:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -158,24 +249,39 @@ export const getCarById = async (req, res) => {
   }
 };
 
+// ✅ Actualizar disponibilidad
 export const updateAvailability = async (req, res) => {
   try {
     const { id } = req.params;
     const { disponible } = req.body;
     
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "ID de vehículo inválido" });
+    }
+    
     const updatedCar = await Car.findByIdAndUpdate(
       id,
-      { disponible },
+      { disponible, updatedAt: new Date() },
       { new: true }
     );
     
     if (!updatedCar) {
-      return res.status(404).json({ error: 'Propiedad no encontrada' });
+      return res.status(404).json({ success: false, message: "Vehículo no encontrado" });
     }
 
-    res.json({ data: updatedCar });
+    res.json({ success: true, data: updatedCar });
   } catch (error) {
-    res.status(500).json({ error: 'Error al actualizar disponibilidad' });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// ✅ Obtener códigos de vehículos (endpoint adicional)
+export const getVehicleCodes = async (_req, res) => {
+  try {
+    const codes = await Car.find().select("codigo").lean();
+    const codeList = codes.map(item => item.codigo);
+    res.status(200).json({ success: true, data: codeList });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
