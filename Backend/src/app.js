@@ -35,7 +35,7 @@ let syncService;
 // Configuración de CORS
 const ALLOWED_ORIGINS = [
     process.env.FRONTEND_URL,
-    'https://msdevalor.com',
+    process.env.FRONTEND_URL2,
     'http://localhost:5173',
     'http://localhost:3000',
     'http://localhost:3002'
